@@ -1,0 +1,1636 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>베이커 랩 노트</title><meta name="description" content="작은 빵집을 위한 레시피·원가·판매 AI 도우미"><meta name="theme-color" content="#3d5a3a"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="베이커랩"><meta name="apple-mobile-web-app-status-bar-style" content="default"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>베이커 랩 노트</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 한 줄로 쌓이는 실험 노트. 위쪽에 항상 보이는 원가 요약 띠, 아래로 배합 → 원가 → AI → 기록 순서 */
+:root{
+  --bg:#f6f5f1; --card:#ffffff; --ink:#22251f; --sub:#676b60; --line:#e2e0d8;
+  --acc:#3f5a3a; --acc-soft:#e7eee4; --ai:#4b4fb8; --ai-soft:#ecebfb;
+  --ok:#2e7d4b; --ok-soft:#e5f3e9; --warn:#9a6a12; --warn-soft:#fbf1dc; --bad:#b23a2e; --bad-soft:#fbe7e4;
+  --bar1:#3f5a3a; --bar2:#7c9a5e; --bar3:#b9a46a; --bar4:#c98a4b; --bar5:#8e7cc3; --bar6:#9aa1a8;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#171915; --card:#20231d; --ink:#e9eae4; --sub:#a3a79a; --line:#33372e;
+  --acc:#9cc28e; --acc-soft:#26311f; --ai:#a9acff; --ai-soft:#25263f;
+  --ok:#7fd19b; --ok-soft:#1d3226; --warn:#e6bd6a; --warn-soft:#352b17; --bad:#f08b80; --bad-soft:#3a201d;
+  --bar1:#9cc28e; --bar2:#6f8f55; --bar3:#c9b57a; --bar4:#d99a5c; --bar5:#a597d6; --bar6:#7d848b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#171915; --card:#20231d; --ink:#e9eae4; --sub:#a3a79a; --line:#33372e;
+  --acc:#9cc28e; --acc-soft:#26311f; --ai:#a9acff; --ai-soft:#25263f;
+  --ok:#7fd19b; --ok-soft:#1d3226; --warn:#e6bd6a; --warn-soft:#352b17; --bad:#f08b80; --bad-soft:#3a201d;
+  --bar1:#9cc28e; --bar2:#6f8f55; --bar3:#c9b57a; --bar4:#d99a5c; --bar5:#a597d6; --bar6:#7d848b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 64px}
+header h1{font-size:22px;margin:4px 0 0;letter-spacing:-.01em}
+header p{color:var(--sub);font-size:13px;margin:2px 0 10px}
+.num,.mono{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.sum{background:var(--bg);padding:8px 0;margin-bottom:4px}
+.sum-in{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 8px}
+.kpi span{display:block;font-size:11px;color:var(--sub);letter-spacing:.02em}
+.kpi b{font-family:var(--f-num);font-size:16px;font-variant-numeric:tabular-nums}
+.kpi.ok b{color:var(--ok)}.kpi.warn b{color:var(--warn)}.kpi.bad b{color:var(--bad)}
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:10px 0}
+summary{padding:12px 14px;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+summary::-webkit-details-marker{display:none}
+summary small{font-weight:400;color:var(--sub);font-size:12px}
+summary:after{content:"＋";color:var(--sub);font-weight:400}
+details[open]>summary:after{content:"－"}
+details.ai>summary{color:var(--ai)}
+.sec{padding:0 14px 14px;display:flex;flex-direction:column;gap:10px}
+.grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+label{font-size:12px;color:var(--sub);display:flex;flex-direction:column;gap:3px;min-width:0}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;min-width:0}
+input[type=number]{font-family:var(--f-num)}
+textarea{min-height:84px;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:9px 13px;background:var(--acc);color:var(--bg);cursor:pointer}
+button.soft{background:var(--acc-soft);color:var(--acc)}
+button.aib{background:var(--ai);color:var(--bg)}
+button.ais{background:var(--ai-soft);color:var(--ai)}
+button.sm{padding:6px 10px;font-size:13px}
+button.x{background:none;color:var(--bad);padding:4px 6px;font-weight:400}
+button:disabled{opacity:.5;cursor:default}
+.tw{overflow-x:auto;margin:0 -4px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:11px;color:var(--sub);text-align:left;font-weight:500;padding:4px;letter-spacing:.02em;white-space:nowrap}
+td{padding:4px;vertical-align:top}
+td input,td select{padding:6px}
+td select{min-width:68px}
+td.r.mono{white-space:nowrap}
+td.r,th.r{text-align:right}
+.tip{font-size:12px;color:var(--sub)}
+.tip.ch{color:var(--warn)}
+.note{font-size:12px;color:var(--sub);margin:0}
+.msg{border-radius:8px;padding:8px 10px;font-size:14px}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}.msg.warn{background:var(--warn-soft);color:var(--warn)}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}.msg.info{background:var(--ai-soft);color:var(--ai)}
+.step{border-top:1px solid var(--line);padding-top:10px}
+.step h3{font-size:14px;margin:0 0 2px}
+.step h3 em{font-style:normal;color:var(--acc);font-family:var(--f-num);margin-right:6px}
+.stack{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--line)}
+.stack i{display:block;height:100%}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px 10px;font-size:13px}
+.legend div{display:flex;justify-content:space-between;gap:8px}
+.legend s{text-decoration:none;display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+.big{font-family:var(--f-num);font-size:24px;font-weight:600}
+.result{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+.result>div{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.result span{display:block;font-size:12px;color:var(--sub)}
+.result b{font-family:var(--f-num);font-size:18px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--ai-soft);color:var(--ai);border-radius:99px;padding:5px 10px;font-size:13px;font-weight:500}
+.answer{white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;min-height:60px}
+.dict{border-bottom:1px solid var(--line);padding:8px 0}
+.thumb{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.logrow{display:flex;gap:10px;align-items:flex-start}.logrow>div{min-width:0;flex:1}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.hdr-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:6px}
+.save-state{font-size:12px;color:var(--sub);background:var(--card);border:1px solid var(--line);border-radius:99px;padding:3px 10px}
+.save-state.cloud{color:var(--ok);border-color:var(--ok)}
+.switch{flex-direction:row;align-items:center;gap:6px;font-size:13px;color:var(--ink);cursor:pointer}
+.switch input{width:auto}
+.tabs{display:flex;gap:4px;overflow-x:auto;position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);padding:8px 0;margin-bottom:4px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:500;white-space:nowrap;padding:8px 14px}
+.tabs button[aria-selected="true"]{background:var(--acc);color:var(--bg);border-color:var(--acc)}
+.tabs .mini{margin-left:auto;align-self:center;font-size:12px;color:var(--sub);white-space:nowrap;padding-left:8px;font-family:var(--f-num)}
+body.simple .adv{display:none!important}
+.home{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.home h2,.h2{font-size:17px;margin:6px 0 0}
+.onb{border:1.5px solid var(--acc);border-radius:12px;padding:14px;background:var(--card);display:flex;flex-direction:column;gap:8px}
+.onb h2{margin:0;color:var(--acc)}
+.why{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:600px){.why{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.why>div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.why b{font-size:15px}.why p{margin:4px 0 0;font-size:13px;color:var(--sub);line-height:1.6}
+.brief{background:var(--accent-soft,#eef3ec);border:1px solid var(--line);border-radius:12px;padding:12px 14px}.brief-h{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.brief-h h3{margin:0 auto 0 0;font-size:15px}.brief ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:14px;line-height:1.5}
+.mic{flex:none;width:42px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:18px;cursor:pointer}.mic.on{background:#e5484d;border-color:#e5484d;animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.6}}
+label.ck{flex-direction:row;align-items:center;gap:6px;align-self:end;padding-bottom:10px}label.ck input{width:auto}.terms{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.55}
+.today{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.today h3{margin:0;font-size:15px}
+.recs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.recs>div{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.recs b{font-family:var(--f-num);font-size:20px;display:block}
+.recs span{font-size:12px;color:var(--sub)}
+.lib{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.lib h4{margin:0;font-size:14px}.lib .meta{font-size:12px;color:var(--sub)}
+.lib .mix{font-size:13px;font-family:var(--f-num);color:var(--ink);overflow-wrap:anywhere}
+.avgt{border-collapse:collapse;font-size:13px;width:100%;max-width:420px}.avgt th,.avgt td{padding:3px 6px;border-bottom:1px solid var(--line);text-align:left}.avgt th{font-size:12px;color:var(--sub);font-weight:500}.avgt .rm{text-align:right;font-family:var(--f-num);white-space:nowrap}
+.lib.avg{gap:0}.lib.avg>summary{cursor:pointer;font-size:14px;padding:2px 0;list-style:none}.lib.avg>summary::-webkit-details-marker{display:none}.lib.avg>summary small{color:var(--sub);font-size:12px;margin-left:4px}.lib.avg[open]>summary{margin-bottom:6px}.lib.avg[open]>*:not(summary){margin-top:6px}#avgList{display:flex;flex-direction:column;gap:6px}
+.lib.avg .meta b{color:var(--ink);font-weight:600;margin-right:4px}.warnc{color:var(--warn)!important}button.on{background:var(--ink);color:var(--bg)}
+.cmp{font-size:13px;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:8px}
+.label-card{border:1.5px dashed var(--sub);border-radius:8px;padding:12px;font-size:13px;line-height:1.7;background:var(--card)}
+.label-card b{font-weight:600}
+.allergy{color:var(--bad);font-weight:600}
+tr.best td{background:var(--ok-soft)}tr.low td{background:var(--warn-soft)}
+.quick{border:1.5px solid var(--acc);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--acc-soft)}
+.quick h3{margin:0;font-size:15px;color:var(--acc)}
+.quick label{color:var(--ink)}
+.ref{border-bottom:1px solid var(--line);padding:8px 0;display:grid;grid-template-columns:1fr auto;gap:2px 10px}
+.ref b{font-weight:600}.ref .v{font-family:var(--f-num);text-align:right;white-space:nowrap}
+.ref p{grid-column:1/-1;margin:0;font-size:12px;color:var(--sub)}
+.ref a{color:var(--ai)}
+.tag{display:inline-block;font-size:11px;border-radius:4px;padding:0 5px;margin-left:4px;vertical-align:middle}
+.tag.v1{background:var(--ok-soft);color:var(--ok)}.tag.v0{background:var(--warn-soft);color:var(--warn)}
+.ana{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.ana dl{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:0}.ana dt{color:var(--sub);font-size:12px;padding-top:2px}.ana dd{margin:0}
+.brief{background:var(--acc-soft);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+.brief p{margin:0;font-size:15px;line-height:1.6}
+.brief b{font-family:var(--f-num);font-weight:600}
+.steps{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.steps a{display:inline-block;background:var(--card);border:1px solid var(--line);color:var(--ink);text-decoration:none;border-radius:99px;padding:5px 10px;font-size:13px}
+.steps a em{font-style:normal;color:var(--acc);font-weight:600;margin-right:4px}
+.what{font-size:13px;color:var(--sub);margin:0}
+.fab{position:fixed;right:max(16px,calc(env(safe-area-inset-right,0px) + 12px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:7;background:var(--ai);color:var(--bg);border-radius:99px;padding:12px 18px;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--card);border-top:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.18);display:flex;flex-direction:column;max-height:86vh;height:86vh;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+@media (min-width:700px){.sheet{left:auto;right:16px;bottom:16px;width:480px;height:78vh;border:1px solid var(--line);border-radius:16px}}
+.sheet-h{display:flex;align-items:center;gap:8px;padding:12px 0 8px;border-bottom:1px solid var(--line)}
+.sheet-h b{font-size:16px;color:var(--ai)}
+.sheet-h .tip{flex:1;min-width:0}
+.chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:10px 0;min-height:0}
+.bub{max-width:88%;padding:9px 12px;border-radius:14px;font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere}
+.bub.me{align-self:flex-end;background:var(--ai);color:var(--bg);border-bottom-right-radius:4px}
+.bub.ai{align-self:flex-start;background:var(--ai-soft);color:var(--ink);border-bottom-left-radius:4px}
+.bub.sys{align-self:stretch;max-width:100%;background:var(--acc-soft);color:var(--acc);font-size:13px}
+.bub .row{margin-top:6px}
+.composer{display:flex;gap:6px;align-items:flex-end;padding-top:8px}
+.composer textarea{min-height:44px;max-height:120px;flex:1}
+.sheet .chips{padding:6px 0;overflow-x:auto;flex-wrap:nowrap}
+.sheet .chip{white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:14px;z-index:9;max-width:90%;text-align:center}
+@media (max-width:520px){.sum-in{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* 휴대폰·태블릿: 한 줄로 쌓기 (side는 상자 없이 펼쳐서 요약 띠가 화면 위에 붙게) */
+.side{display:contents}
+.pc-only{display:none}
+/* PC: 왼쪽 작업 영역 + 오른쪽 고정 패널(요약·지표·비서) */
+@media (min-width:1100px){
+  .wrap{max-width:1360px}
+  header{display:flex;align-items:baseline;gap:14px}
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 420px;grid-template-areas:"main side";gap:20px;align-items:start}
+  .main{grid-area:main;min-width:0}
+  .side{grid-area:side;display:flex;flex-direction:column;gap:10px;position:sticky;top:12px;height:calc(100vh - 24px)}
+  .sum{position:static;padding:0;margin:0}
+  .brief{margin:0}
+  #dock{flex:1;min-height:0;min-width:0;display:flex}
+  .side>*{min-width:0}
+  .sum-in{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sheet.docked{position:static;flex:1;min-width:0;height:auto;max-height:none;width:auto;border:1px solid var(--line);border-radius:12px;box-shadow:none;padding:0 12px 12px}
+  .sheet.docked #sheetClose{display:none}
+  .tabs{top:0}
+  .fab{display:none}
+  .pc-only{display:inline}
+  .grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  details{margin:14px 0}
+  .main>details:first-child{margin-top:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+<header>
+<div><h1>베이커 랩 노트</h1>
+<p>작은 빵집을 위한 레시피 · 원가 · 판매 AI 도우미</p></div>
+<div class="hdr-r"><span class="save-state" id="saveState">이 기기에 저장</span>
+<label class="switch"><input type="checkbox" id="expert"> 전문가 모드</label></div>
+</header>
+
+<div class="layout">
+<aside class="side" id="side">
+<section class="brief" aria-label="한눈에 보기">
+<p id="brief">계산 중이에요.</p>
+<ol class="steps">
+<li><a href="#d1" data-go="d1"><em>1</em>빵·배합</a></li>
+<li><a href="#d4" data-go="d4"><em>2</em>원가·판매가</a></li>
+<li><a href="#d11" data-go="d11"><em>3</em>판매 기록</a></li>
+<li><a href="#d6" data-go="d6"><em>4</em>굽고 기록</a></li>
+<li><a href="#bot" data-go="bot"><em>5</em>AI 비서</a></li>
+</ol>
+</section>
+
+<div class="sum" aria-live="polite"><div class="sum-in">
+<div class="kpi"><span>개당 원가</span><b id="kCost">-</b></div>
+<div class="kpi" id="kMarginBox"><span>개당 순이익 · 마진</span><b id="kMargin">-</b></div>
+<div class="kpi"><span>권장 판매가</span><b id="kRec">-</b></div>
+<div class="kpi" id="kBepBox"><span>손익분기 (월)</span><b id="kBep">-</b></div>
+</div></div>
+<div id="dock"></div>
+</aside>
+<main class="main">
+<nav class="tabs" id="tabs" aria-label="화면 이동"></nav>
+
+<!-- 홈 -->
+<section id="dHome" class="home">
+<div class="onb" id="onb">
+<h2>3단계로 시작해요</h2>
+<p class="note">내 빵 하나로 "1개 팔면 얼마 남는지"부터 확인해 보세요. 1분이면 돼요.</p>
+<div class="grid">
+<label>1. 만들 빵<select id="onbPreset"></select></label>
+<label>2. 주로 파는 곳<select id="onbChannel"><option value="store">매장·팝업</option><option value="app">배달앱</option><option value="online">스마트스토어 택배</option><option value="b2b">카페 납품</option></select></label>
+<label>3. 판매가 (원)<input id="onbPrice" type="number" inputmode="decimal"></label>
+</div>
+<div class="row"><button id="onbGo">결과 보기</button><button class="soft sm" id="onbSkip">이미 알아요, 닫기</button></div>
+<div id="onbOut"></div>
+</div>
+
+<div class="brief" id="todayBrief"></div>
+<div class="today" id="today"></div>
+
+<h2 class="h2">왜 베이커 랩 노트인가요?</h2>
+<div class="why">
+<div><b>남는 돈이 정확히 보여요</b><p>재료값만이 아니라 포장, 인건비, 전기, 월세, 폐기, 배달앱·카드 수수료와 세금까지 넣어 "1개 팔면 실제로 얼마 남는지" 계산해요. 판매 방식만 고르면 기준값이 채워져요.</p></div>
+<div><b>배합을 바꾸면 나머지가 따라와요</b><p>쌀가루·우리밀 같은 지역 재료를 넣으면 물과 글루텐이 자동으로 맞춰지고, 원가와 권장 판매가도 바로 다시 계산돼요.</p></div>
+<div><b>AI 레시피 비서</b><p>지금 배합·원가·실험 기록을 보고 배합을 직접 고쳐주고, 빵 사진을 보고 부피·속결을 진단해요. 국내외 표준 배합과 비교해서 근거를 말해요.</p></div>
+<div><b>폐기를 줄여요</b><p>매일 만든 개수와 판 개수를 적으면 요일별로 내일 만들 양을 추천하고, 어떤 메뉴가 가장 많이 남는지 보여줘요.</p></div>
+</div>
+<p class="note">작은 가게가 문을 닫는 가장 큰 이유는 수익성 악화예요. 2025년 폐업 소상공인의 70.9%가 이를 꼽았고, 매출 부진의 원인으로 원재료비(29.4%)·인건비(28.8%)·고정비(24.9%)가 뒤를 이었어요. <a href="https://www.hankookilbo.com/news/article/A2026063013390003758" target="_blank" rel="noopener">출처: 중소벤처기업부 실태조사(2026.6)</a></p>
+</section>
+<details id="d13"><summary>받을 수 있는 정부 지원 <small>창업 지원금 · 소상공인 지원 · 정책자금</small></summary><div class="sec">
+<p class="what">베이커리 창업자와 사장님이 신청할 수 있는 지원을 모았어요(2026년 10월 확인, 2027 예산안 기준). 금액과 일정은 12월 말 정부 통합공고에서 꼭 다시 확인하세요. 비서에게 "지원사업 알려줘"라고 물어도 돼요.</p>
+<div id="grantList"></div>
+</div></details>
+
+
+<!-- 1. 레시피 -->
+<details open id="d1"><summary>레시피 기본 <small>빵 종류 · 개수 · 무게</small></summary><div class="sec">
+<p class="what">무슨 빵을 얼마나 만들지 정해요. 개수로 정하거나, 가진 밀가루 양으로 정할 수 있어요.</p>
+<div class="grid">
+<label>빵 종류 (기본 배합)<select id="preset"></select></label>
+<label>레시피 이름<input id="rname"></label>
+<label>계산 기준<select id="mode"><option value="pieces">만들 개수로 정하기</option><option value="flour">밀가루 양으로 정하기</option></select></label>
+<label id="flourWrap">밀가루 총량 (g)<input id="flourG" type="number" inputmode="decimal"></label>
+<label>만들 개수<input id="pieces" type="number" inputmode="decimal"></label>
+<label>개당 반죽 무게 (g)<input id="weight" type="number" inputmode="decimal"></label>
+<label class="adv">반죽 손실률 (%)<input id="loss" type="number" inputmode="decimal"></label>
+<label class="adv">굽기 손실률 (%)<input id="bakeLoss" type="number" inputmode="decimal"></label>
+</div>
+<p class="note">반죽 손실은 작업 중 버려지는 반죽(보통 2~5%), 굽기 손실은 구우면서 날아가는 수분(빵 보통 10~15%)이에요. 완제품 개당 무게: <b class="mono" id="finW">-</b></p>
+<p class="note" id="modeNote"></p>
+</div></details>
+
+<!-- 2. 배합 -->
+<details open id="d2"><summary>배합표 <small>베이커 퍼센트</small></summary><div class="sec">
+<p class="what">밀가루를 100으로 놓고 다른 재료를 비율로 적는 표예요. 밀가루 종류나 비율을 바꾸면 물·글루텐이 자동으로 따라 바뀌어요.</p>
+<div class="grid">
+<div class="kpi"><span>밀가루 총량</span><b id="sFlour">0</b></div>
+<div class="kpi"><span>총 반죽</span><b id="sTotal">0</b></div>
+<div class="kpi"><span>수분율</span><b id="sHyd">0</b></div>
+<div class="kpi"><span>퍼센트 합계</span><b id="sPct">0</b></div>
+</div>
+<div class="tw"><table><thead><tr><th>재료</th><th class="r">%</th><th class="r">g</th><th></th></tr></thead><tbody id="tbody"></tbody></table></div>
+<div class="grid">
+<label>재료 이름<input id="newIng" list="ingList" placeholder="목록에서 고르거나 직접 입력"></label>
+<label>%<input id="newPct" type="number" inputmode="decimal"></label>
+</div>
+<datalist id="ingList"></datalist>
+<label class="adv" style="flex-direction:row;align-items:center;gap:8px;font-size:13px;color:var(--ink)"><input type="checkbox" id="autoFlour" style="width:auto"> 밀가루를 바꾸면 다른 재료 자동 조정 (밀가루 합계 100 유지, 물·글루텐 보정)</label>
+<div id="autoMsg" hidden></div>
+<div class="row"><button id="addBtn">재료 추가</button><button class="soft" id="x05">반으로</button><button class="soft" id="x2">두 배로</button><button class="soft" id="undoBtn">되돌리기</button></div>
+<p class="note">g 칸에 가진 양을 적으면(예: 버터 500g) 그 양에 맞춰 모든 재료가 함께 바뀌어요. 밀가루 합계를 100으로 두고 나머지를 비율로 적어요. %를 바꾸면 기본 배합과 비교한 효과가 재료 아래에 나와요. 수분율에는 우유·계란·버터 속 수분도 들어가요.</p>
+</div></details>
+
+<!-- 3. 진단 -->
+<details id="d3" class="adv"><summary>배합 점검 · 재료 바꾸기 <small>규칙 기반 자동 보정</small></summary><div class="sec">
+<p class="what">배합에 문제가 없는지 보고, 버터를 오일로 바꾸거나 지역 재료를 넣을 때 쓰세요.</p>
+<p class="note">빵 종류별 일반 범위와 비교해요. 밀가루 제품과 온도에 따라 결과가 달라지니 출발점으로 쓰세요.</p>
+<div class="row"><button id="diagBtn">배합 점검</button><button class="soft" id="fixBtn">권장값으로 보정</button></div>
+<div id="diagOut" class="sec" style="padding:0"></div>
+<div class="step"><h3>재료 바꾸기</h3>
+<div class="grid"><label>바꿀 재료<select id="subFrom"></select></label><label>바꿀 재료로<select id="subTo"></select></label></div>
+<p class="note" id="subNote"></p>
+<div class="row"><button id="subBtn">바꾸고 수분 조정</button></div></div>
+<div class="step"><h3>지역 재료 넣기</h3>
+<div class="grid"><label>지역 재료<select id="locSel"></select></label><label>넣을 비율 (%)<input id="locPct" type="number" inputmode="decimal"></label></div>
+<p class="note" id="locNote"></p>
+<div class="row"><button id="locBtn">넣고 배합 조정</button></div></div>
+<div class="step adv" id="tempStep"><h3>반죽 온도 · 물 온도 계산</h3>
+<p class="note">반죽이 끝났을 때 온도가 맞아야 발효 시간이 예상대로 가요. 목표 온도와 지금 온도를 넣으면 넣을 물의 온도와, 너무 차가운 물이 필요할 때 얼음 양을 알려줘요.</p>
+<div class="grid">
+<label>목표 반죽 온도 (℃)<input id="tTarget" type="number" inputmode="decimal"></label>
+<label>작업실 온도 (℃)<input id="tRoom" type="number" inputmode="decimal"></label>
+<label>밀가루 온도 (℃)<input id="tFlour" type="number" inputmode="decimal"></label>
+<label>마찰 계수 (℃)<input id="tFric" type="number" inputmode="decimal"></label>
+<label>수돗물 온도 (℃)<input id="tTap" type="number" inputmode="decimal"></label>
+</div>
+<div id="tempOut"></div>
+<p class="note">마찰 계수는 믹서가 반죽을 데우는 정도예요. 처음엔 20으로 두고, 한 번 반죽한 뒤 '결과 반죽 온도 × 3 − (작업실 + 밀가루 + 물 온도)'로 내 믹서 값을 구해 바꾸세요.</p>
+</div>
+</div></details>
+
+<!-- 4. 원가 -->
+<details open id="d4"><summary>세부 원가 계산 <small>9단계</small></summary><div class="sec">
+<p class="what">빵 1개를 만드는 데 드는 모든 돈(재료·포장·인건비·전기·월세·폐기·세금)을 더해요. 맨 아래 ⑨에 결론이 나와요.</p>
+<div class="quick">
+<h3>처음이면 여기부터: 빠른 설정</h3>
+<p class="note">내 상황을 고르면 수수료·세금·포장재·배송비·인건비 가산을 조사된 기준값으로 한 번에 채워요. 채운 뒤에도 아래에서 하나씩 고칠 수 있어요.</p>
+<div class="grid">
+<label>주로 어디서 팔아요?<select id="qChannel"><option value="store">매장·팝업 (카드 결제)</option><option value="app">배달앱 (배민·쿠팡이츠)</option><option value="online">스마트스토어 (택배)</option><option value="b2b">카페 납품</option></select></label>
+<label id="qAppWrap">배달앱 매출 구간<select id="qApp"><option value="low">하위 20% (수수료 2.0%)</option><option value="mid" selected>중간 (6.8%)</option><option value="top">상위 35% (7.8%)</option></select></label>
+<label>예상 연 매출<select id="qRev"><option value="1">3억 이하</option><option value="2">3억~5억</option><option value="3">5억~10억</option><option value="4">10억~30억</option></select></label>
+<label>사업자 유형<select id="qBiz"><option value="auto">잘 모르겠어요 (매출로 추정)</option><option value="simple">간이과세자</option><option value="gen">일반과세자</option></select></label>
+<label>일하는 사람<select id="qStaff"><option value="solo">혼자 (내 시간값만)</option><option value="short">알바 주 15시간 미만</option><option value="full">직원·알바 주 15시간 이상</option></select></label>
+<label>포장 방식<select id="qPack"><option value="bag">낱개 종이봉투</option><option value="loaf">식빵 봉투</option><option value="cookie">개별 OPP + 습기 제거제</option><option value="box">상자 + 쇼핑백</option></select></label>
+</div>
+<div class="row"><button id="qApply">이 조건으로 채우기</button></div>
+<div id="qOut"></div>
+</div>
+<p class="note">위에서부터 차례로 채우면 개당 원가가 쌓여요. 기본값은 2026년 10월 기준 참고값이에요(최저시급 10,320원, 계란 특란 한판 약 6,000원 등). 근거는 전문가 모드의 '비용 정보 사전'에 있어요. 실제 영수증 금액으로 바꾸면 이 기기에 저장돼요.</p>
+
+<div class="step"><h3><em>①</em>재료비 (배합)</h3>
+<p class="note">구매 단위 그대로 적으세요. 계란처럼 개수로 사면 단위를 '개'로, 1개 무게를 적어요. ml·L는 1ml≈1g으로 계산해요. 수율은 쓸 수 있는 비율이에요(과일 껍질·씨를 버리면 70~80%).</p>
+<div class="tw"><table><thead><tr><th>재료</th><th class="r">구매가(원)</th><th class="r">양</th><th>단위</th><th class="r adv">1개 g</th><th class="r adv">수율%</th><th class="r adv">원/g</th><th class="r">이번 배합</th></tr></thead><tbody id="ingCostBody"></tbody></table></div>
+<p class="note">이번 배합 재료비 합계 <b class="mono" id="ingTotal">-</b> · 개당 <b class="mono" id="ingPer">-</b></p></div>
+
+<div class="step adv"><h3><em>②</em>토핑 · 충전물</h3>
+<p class="note">개당 들어가는 양으로 적어요 (예: 크림치즈 충전 20g, 아몬드 슬라이스 5g).</p>
+<div class="tw"><table><thead><tr><th>이름</th><th class="r">개당 g</th><th class="r">구매가</th><th class="r">양</th><th>단위</th><th class="r">개당 원가</th><th></th></tr></thead><tbody id="topBody"></tbody></table></div>
+<div class="row"><button class="soft sm" id="addTop">토핑 추가</button></div></div>
+
+<div class="step"><h3><em>③</em>포장재</h3>
+<p class="note">묶음 가격과 묶음 수량을 적으면 개당으로 나눠요.</p>
+<div class="tw"><table><thead><tr><th>이름</th><th class="r">묶음 가격</th><th class="r">묶음 수량</th><th class="r">개당</th><th></th></tr></thead><tbody id="packBody"></tbody></table></div>
+<div class="row"><button class="soft sm" id="addPack">포장재 추가</button></div></div>
+
+<div class="step"><h3><em>④</em>직접 인건비 (이번 배치)</h3>
+<div class="grid">
+<label>시급 (원)<input id="wage" type="number" inputmode="decimal"></label>
+<label class="adv">주휴·4대보험 가산 (%)<input id="wageExtra" type="number" inputmode="decimal"></label>
+<label>계량·반죽 (분)<input id="tPrep" type="number" inputmode="decimal"></label>
+<label>분할·성형 (분)<input id="tShape" type="number" inputmode="decimal"></label>
+<label>굽기·관리 (분)<input id="tBake" type="number" inputmode="decimal"></label>
+<label>포장·정리 (분)<input id="tPack" type="number" inputmode="decimal"></label>
+</div>
+<p class="note">사람이 손을 쓰는 시간만 적어요(발효 대기 시간은 빼요). 주 15시간 이상 고용하면 주휴수당이 붙어 실제 시급이 약 20% 올라가요. 혼자 일해도 내 시간값을 넣어야 진짜 원가가 보여요. <span id="laborOut"></span></p></div>
+
+<div class="step adv"><h3><em>⑤</em>에너지비 (이번 배치)</h3>
+<div class="grid">
+<label>오븐 소비전력 (kW)<input id="kw" type="number" inputmode="decimal"></label>
+<label>예열+굽기 (분)<input id="ovMin" type="number" inputmode="decimal"></label>
+<label>기타 장비 kW (발효기·믹서)<input id="kw2" type="number" inputmode="decimal"></label>
+<label>기타 장비 사용 (분)<input id="eqMin" type="number" inputmode="decimal"></label>
+<label>전기요금 (원/kWh)<input id="kwh" type="number" inputmode="decimal"></label>
+</div>
+<p class="note">소비전력은 장비 뒷면 명판에 있어요(소형 컨벡션 3~4kW, 데크오븐 6kW 이상). 전기요금 단가는 고지서의 '전력량요금 ÷ 사용량'으로 구하세요. 기본값 150원은 예시예요. <span id="energyOut"></span></p></div>
+
+<div class="step"><h3><em>⑥</em>월 고정비 → 개당 배분</h3>
+<div class="grid">
+<label>월세<input id="fRent" type="number" inputmode="decimal"></label>
+<label class="adv">관리비·공과금 기본료<input id="fMgmt" type="number" inputmode="decimal"></label>
+<label class="adv">보험·세무 기장료<input id="fIns" type="number" inputmode="decimal"></label>
+<label class="adv">통신·프로그램·마케팅<input id="fTele" type="number" inputmode="decimal"></label>
+<label class="adv">장비 구입가 (총)<input id="fEquip" type="number" inputmode="decimal"></label>
+<label class="adv">장비 사용 기간 (개월)<input id="fEquipM" type="number" inputmode="decimal"></label>
+<label class="adv">대표 월급 (선택)<input id="fOwner" type="number" inputmode="decimal"></label>
+<label>월 판매 개수 (목표)<input id="fMonthly" type="number" inputmode="decimal"></label>
+</div>
+<p class="note">장비값은 사용 기간으로 나눠 매달 비용으로 잡아요(감가상각). 공유주방을 쓰면 월세 칸에 이용료를 넣으세요. <span id="fixedOut"></span></p></div>
+
+<div class="step"><h3><em>⑦</em>폐기 · 로스</h3>
+<div class="grid"><label>안 팔려서 버리는 비율 (%)<input id="waste" type="number" inputmode="decimal"></label></div>
+<p class="note">10개 만들어 9개 팔면 10%예요. 버린 빵의 재료·인건비는 팔린 빵이 대신 부담해요.</p></div>
+
+<div class="step"><h3><em>⑧</em>판매가 · 세금 · 수수료</h3>
+<div class="grid">
+<label>판매가 (원, 손님이 내는 값)<input id="price" type="number" inputmode="decimal"></label>
+<label class="adv">부가세<select id="vatMode">
+<option value="gen">일반과세자 (판매가에 10% 포함)</option>
+<option value="mfg">간이과세자 · 제조 (약 2%)</option>
+<option value="food">간이과세자 · 음식점 (약 1.5%)</option>
+<option value="none">계산 안 함</option></select></label>
+<label class="adv">판매 채널 수수료 (%)<input id="fee" type="number" inputmode="decimal"></label>
+<label class="adv">카드·결제 수수료 (%)<input id="card" type="number" inputmode="decimal"></label>
+<label>목표 마진 (%)<input id="target" type="number" inputmode="decimal"></label>
+<label class="adv">주문당 배달·택배비 내 부담 (원)<input id="ship" type="number" inputmode="decimal"></label>
+<label class="adv">주문당 평균 개수<input id="perOrder" type="number" inputmode="decimal"></label>
+</div>
+<p class="note">배달앱은 중개수수료+결제수수료를, 스마트스토어는 결제·판매 수수료를 채널 수수료에 넣어요. 배달·택배비는 손님이 내는 몫을 빼고 내가 내는 금액만 적고, 박스·아이스팩 값도 여기에 더해요. 부가세는 대략값이고 매입 세액 공제는 반영하지 않았어요. 정확한 금액은 세무사에게 확인하세요.</p></div>
+
+<div class="step"><h3><em>⑨</em>결과</h3>
+<div class="stack" id="stack"></div>
+<div class="legend" id="legend"></div>
+<div class="result" id="result"></div>
+<div id="verdict"></div>
+<div class="tw adv"><table><thead><tr><th>판매가</th><th class="r">실수령</th><th class="r">개당 순이익</th><th class="r">마진</th><th class="r">손익분기 (월)</th></tr></thead><tbody id="scen"></tbody></table></div>
+<label class="adv">재료값이 오르내리면: <b class="mono" id="whatLbl">0%</b><input id="whatIf" type="range" min="-30" max="50" step="5" value="0"></label>
+<p class="note adv" id="whatOut"></p></div>
+
+<div class="step adv"><h3>카페 레시피 개발 견적</h3>
+<p class="note">사업 계획의 B2B 서비스 견적이에요. 이번 배합으로 시험하는 비용이 자동으로 들어가요.</p>
+<div class="grid">
+<label>개발·문서 작업 시간 (시간)<input id="devH" type="number" inputmode="decimal"></label>
+<label>내 시간값 (원/시간)<input id="devRate" type="number" inputmode="decimal"></label>
+<label>시험 굽기 횟수<input id="devTry" type="number" inputmode="decimal"></label>
+<label>이윤 (%)<input id="devProfit" type="number" inputmode="decimal"></label>
+</div>
+<div id="devOut"></div></div>
+</div></details>
+
+<!-- 판매 -->
+<details open id="d11"><summary>판매·생산 기록 <small>매출 · 이익 · 폐기 · 내일 생산량</small></summary><div class="sec">
+<p class="what">매일 만든 개수와 판 개수만 적으면 매출, 실제 남은 돈, 버린 비율을 계산하고, 요일별로 내일 만들 양을 추천해요.</p>
+<div class="grid">
+<label>날짜<input id="sDate" type="date"></label>
+<label>메뉴<select id="sMenu"></select></label>
+<label>만든 개수<input id="sMade" type="number" inputmode="numeric"></label>
+<label>판 개수<input id="sSold" type="number" inputmode="numeric"></label>
+<label>그날 날씨<select id="sWx"><option value="">모름</option><option>맑음</option><option>흐림</option><option>비</option><option>눈</option><option>폭염</option><option>한파</option></select></label>
+<label class="ck"><input type="checkbox" id="sEv"> 공휴일·행사·축제</label>
+</div>
+<div class="row"><button id="sAdd">기록하기</button><span class="tip">같은 날 같은 메뉴를 다시 적으면 고쳐져요. 메뉴는 '기록' 탭에서 저장한 레시피예요.</span></div>
+<div id="sSummary"></div>
+<div class="step"><h3>내일 추천 생산량 <small class="tip">요일·날씨·행사를 스스로 학습해요</small></h3>
+<div class="grid"><label>가게 지역<select id="fcCity"></select></label><label>내일 날씨<select id="fcWx"><option value="">모름</option><option>맑음</option><option>흐림</option><option>비</option><option>눈</option><option>폭염</option><option>한파</option></select></label><label class="ck"><input type="checkbox" id="fcEv"> 내일 공휴일·행사</label></div>
+<div class="row"><button class="soft sm" id="fcAuto">날씨 자동으로 불러오기</button><span class="tip" id="fcWxInfo"></span></div>
+<div id="sRec"></div><div id="sLearn" class="note"></div></div>
+<div class="step"><h3>최근 기록</h3>
+<div class="tw"><table><thead><tr><th>날짜</th><th>메뉴</th><th class="r">만든</th><th class="r">판</th><th class="r">폐기율</th><th class="r">매출</th><th class="r">남은 돈</th><th></th></tr></thead><tbody id="sBody"></tbody></table></div></div>
+<div class="step"><h3>메뉴 손익표</h3>
+<p class="note">저장한 레시피들을 같은 원가 설정(수수료·세금·고정비)으로 비교해요. 어떤 빵이 가장 많이 남는지, 어떤 빵의 가격을 다시 봐야 하는지 한눈에 보여요.</p>
+<div class="tw"><table><thead><tr><th>메뉴</th><th class="r">개당 원가</th><th class="r">판매가</th><th class="r">개당 이익</th><th class="r">마진</th><th class="r">식재료율</th></tr></thead><tbody id="menuBody"></tbody></table></div>
+<div id="menuNote"></div>
+</div>
+</div></details>
+
+<!-- 5. 라벨 -->
+<details id="d9"><summary>판매 라벨 · 알레르기 <small>원재료 · 중량 · 소비기한</small></summary><div class="sec">
+<p class="what">팔 때 봉투에 붙일 표시 내용을 배합에서 자동으로 만들어요. 원재료는 많이 들어간 순서로, 알레르기 유발 재료는 자동으로 찾아요.</p>
+<div class="grid">
+<label>제품명<input id="lbName"></label>
+<label>업소명<input id="lbShop" placeholder="예: OO베이커리"></label>
+<label>소재지<input id="lbAddr" placeholder="예: 서울시 OO구 OO로 12"></label>
+<label>소비기한 (만든 날부터 며칠)<input id="lbDays" type="number" inputmode="decimal"></label>
+<label>보관 방법<select id="lbKeep"><option>직사광선을 피해 서늘한 곳에 보관</option><option>냉장 보관 (0~10℃)</option><option>냉동 보관 (-18℃ 이하)</option></select></label>
+<label>제조일<input id="lbDate" type="date"></label>
+</div>
+<div id="lbOut"></div>
+<div class="row"><button class="soft sm" id="lbCopy">표시 내용 복사</button></div>
+<p class="note">알레르기는 배합표 재료 이름으로 찾은 결과예요. 초콜릿·가공 재료처럼 안에 다른 재료가 섞인 원료는 원료 포장의 표시를 보고 직접 더하세요. 판매 방식(즉석판매·제조가공·온라인)에 따라 표시 의무 항목이 달라서, 처음 팔기 전 관할 구청 위생과나 식품안전나라에서 확인하세요.</p>
+</div></details>
+
+<!-- 6. 저장 -->
+<details id="d14"><summary>이용 안내 <small>데이터 · 책임 · 개인정보</small></summary><div class="sec">
+<ul class="terms">
+<li><b>숫자는 참고값이에요.</b> 평균 배합, 재료 시세, 수수료·세금 기준은 조사 시점의 추정값이에요. 실제 거래가와 최신 공고로 고쳐 쓰세요.</li>
+<li><b>알레르기·표시사항은 꼭 확인하세요.</b> 라벨 도우미는 배합표 재료만 보고 만들어요. 원재료 제품의 실제 표시와 식품표시광고법 기준을 최종 확인하는 책임은 판매자에게 있어요.</li>
+<li><b>AI 답은 틀릴 수 있어요.</b> 비서와 예측은 판단을 돕는 도구예요. 새 배합은 시험 굽기로 확인하세요.</li>
+<li><b>데이터는 내 것이에요.</b> 기록은 이 기기와 내 계정 저장소에만 저장되고 다른 사람에게 보이지 않아요. 언제든 백업 파일로 내보내거나 지울 수 있어요.</li>
+<li><b>음성 입력</b>은 브라우저의 음성 인식 기능을 써요. 마이크를 누를 때만 들어요.</li>
+</ul>
+</div></details>
+
+<details open id="d6"><summary>레시피 저장 · 실험 기록 · 메뉴 손익</summary><div class="sec">
+<p class="what">마음에 드는 배합을 저장하고, 구운 결과를 사진이나 글로 남겨요. 쌓인 기록은 AI 상담과 사업계획서의 근거가 돼요.</p>
+<div class="grid"><label>저장된 레시피<select id="savedSel"></select></label></div>
+<div class="row"><button class="sm" id="saveBtn">현재 레시피 저장</button><button class="soft sm" id="loadBtn">불러오기</button><button class="soft sm" id="delBtn">삭제</button></div>
+<p class="note" id="delAsk" hidden></p>
+<div class="step" id="photoStep"><h3>사진으로 기록하기</h3>
+<p class="note">구운 빵의 겉과 단면을 찍어 올리면 AI가 부피·껍질 색·속결·기공을 보고, 빵 종류별 기준과 지난 기록에 비교해 설명해요. 결과는 사진과 함께 실험 기록에 저장되고, 다음에 바꿀 배합도 제안해요.</p>
+<div class="grid">
+<label>사진 (겉·단면)<input id="photoIn" type="file" accept="image/*" multiple></label>
+<label>공정 메모 (선택)<input id="procNote" placeholder="예: 1차 27℃ 60분, 2차 38℃ 45분, 180℃ 32분"></label>
+</div>
+<div id="photoPrev" class="row"></div>
+<div class="row"><button class="aib" id="photoBtn">사진 분석하고 기록</button></div>
+<div id="photoOut"></div>
+<div id="photoFb" hidden><p class="note">이 화면에서는 AI 사진 분석이 안 돼요(Claude 웹페이지에서는 돼요). 사진은 기록에 저장했어요. Claude 앱에 사진을 직접 올리고 아래 질문을 같이 붙여넣으면 같은 분석을 받을 수 있어요.</p>
+<textarea id="photoFbText" readonly style="min-height:80px"></textarea><div class="row"><button class="soft sm" id="photoFbCopy">질문 복사</button></div></div>
+</div>
+<div class="step"><h3>직접 적어서 기록하기</h3>
+<p class="note">구운 뒤 결과를 남기면 나만의 배합 데이터가 쌓여요. 사업계획서의 근거가 되고 AI 상담에도 함께 들어가요.</p>
+<div class="grid"><label>평가<select id="logRate"><option value="5">5 아주 좋음</option><option value="4">4 좋음</option><option value="3" selected>3 보통</option><option value="2">2 아쉬움</option><option value="1">1 실패</option></select></label><label>날짜<input id="logDate" type="date"></label></div>
+<textarea id="logNote" placeholder="예: 볼륨 좋음, 속결 촉촉, 겉이 빨리 탐"></textarea>
+<div class="row"><button class="sm" id="logBtn">기록 추가</button></div>
+<div id="logList"></div></div>
+<div class="step"><h3>백업</h3>
+<p class="note">저장 내용은 이 기기 브라우저에만 남고 지워질 수 있어요. 가끔 백업을 만들어 메모장에 보관하세요.</p>
+<div class="row"><button class="sm" id="fileBtn" hidden>백업 파일로 저장</button><button class="soft sm" id="expBtn">전체 백업 만들기</button><button class="soft sm" id="csvBtn">실험 기록 CSV</button><button class="soft sm" id="impBtn">붙여넣은 백업 복원</button></div>
+<textarea id="backupBox" placeholder="백업 내용이 여기 나와요. 복원할 때는 여기에 붙여넣고 '복원'을 누르세요."></textarea></div>
+</div></details>
+
+<!-- 평균 기본 배합 -->
+<details id="d12" open><summary>평균 기본 배합 <small>많이 팔리는 빵·과자 60종 · 속재료·크림 22종</small></summary><div class="sec">
+<p class="what">국내 판매 순위와 기능사 배합, 국내외 전문서·실무 레시피를 비교해 만든 <b>평균 배합과 보통 범위</b>예요. 내 배합이 보통보다 많은지 적은지 바로 비교하고, 배합표로 불러와 원가까지 계산할 수 있어요. 레시피 비서도 이 내용을 다 알고 있어서 "소금빵 배합 알려줘"처럼 물으면 설명과 함께 답해요.</p>
+<div class="row"><button class="soft sm on" data-amode="b">빵·과자</button><button class="soft sm" data-amode="f">속재료·크림</button></div>
+<div class="grid"><label>종류<select id="avgCat"><option value="">전체</option></select></label><label>검색<input id="avgQ" placeholder="예: 소금빵, 크림, 쌀"></label></div>
+<p class="note">표시: <b>표준*</b> 기능사 실기 배합 · <b>추정A</b> 3개 이상 출처 평균 · <b>추정B</b> 출처가 적어 테스트 필요. 기준 2026년 10월 조사.</p>
+<div id="avgList"></div>
+<details class="srcs"><summary>근거 자료</summary><ul id="avgSrc"></ul></details>
+</div></details>
+
+<!-- 7. 참고 레시피 -->
+<details id="d10"><summary>참고 레시피 모음 <small>국내외 표준 배합 · 내가 모은 레시피</small></summary><div class="sec">
+<p class="what">나라별 대표 빵·과자의 일반적인 배합과, 내가 책·강의·영상에서 보고 기록한 배합을 모아두는 곳이에요. 지금 배합과 비교하거나 배합표로 불러올 수 있고, 레시피 비서도 이 데이터를 근거로 답해요.</p>
+<div class="grid"><label>종류로 거르기<select id="refFilter"><option value="">전체</option></select></label><label>검색<input id="refQ" placeholder="예: 쌀, 프랑스, 호밀"></label></div>
+<div id="refLib"></div>
+<div class="step"><h3>내가 본 레시피 추가</h3>
+<p class="note">글이나 사진은 옮기지 말고 재료 비율만 적어요. 출처(책 이름, 링크)를 꼭 남기면 나중에 근거가 돼요. g으로 적어도 밀가루 합계를 100으로 자동 변환해요.</p>
+<div class="grid">
+<label>이름<input id="urName" placeholder="예: OO제과 쑥 식빵"></label>
+<label>빵 종류<select id="urType"></select></label>
+<label>나라·스타일<input id="urOrigin" placeholder="예: 한국, 일본식"></label>
+<label>출처<input id="urSrc" placeholder="책 이름 또는 링크"></label>
+</div>
+<label>재료 (한 줄에 하나 또는 쉼표로)<textarea id="urItems" placeholder="강력분 500g, 물 330g, 쑥가루 15g, 설탕 35g, 소금 10g, 버터 30g, 인스턴트 드라이이스트 6g"></textarea></label>
+<div class="row"><button class="sm" id="urAdd">추가</button><button class="soft sm" id="urCur">지금 배합을 참고로 저장</button></div>
+</div>
+</div></details>
+
+<!-- 7. 사전 -->
+<details id="d7" class="adv"><summary>재료 사전</summary><div class="sec">
+<input id="dictQ" placeholder="재료 검색 (예: 버터, 쌀, 이스트)" aria-label="재료 검색">
+<div id="dictList"></div>
+</div></details>
+<!-- 비용 정보 사전 -->
+<details id="d8" class="adv"><summary>비용 정보 사전 <small>수수료 · 세금 · 포장 · 배송 · 인건비</small></summary><div class="sec">
+<p class="what">원가 계산에 쓰는 기준값과 그 근거예요. <span class="tag v1">확인</span>은 기사·공식 자료로 확인한 값, <span class="tag v0">추정</span>은 시장 시세로 잡은 참고값이에요. 수수료와 요율은 자주 바뀌니 계약 전 꼭 다시 확인하세요.</p>
+<div id="refList"></div>
+</div></details>
+
+</main>
+</div>
+</div>
+
+<button class="fab" id="fab" aria-haspopup="dialog">AI 비서</button>
+<div class="sheet" id="sheet" role="dialog" aria-label="레시피 개발 비서" hidden>
+<div class="sheet-h"><b>베이커 AI 비서</b><span class="tip" id="aiStatus">연결 확인 중</span><button class="soft sm" id="ttsBtn" type="button">읽어주기 꺼짐</button><button class="soft sm" id="chatClear">새 대화</button><button class="soft sm" id="sheetClose">닫기</button></div>
+<div class="chat" id="chat" aria-live="polite"></div>
+<div class="chips" id="chips">
+<button class="chip" data-q="오늘 브리핑 해줘">오늘 브리핑</button>
+<button class="chip" data-q="내일 메뉴별로 몇 개 만들까? 요일·날씨·행사 학습 결과와 이유도 알려줘.">내일 생산 예측</button>
+<button class="chip" data-q="내 상황(베이커리 창업 준비, 지역 재료, AI 앱)에 맞는 정부 지원사업을 우선순위대로 알려주고 준비할 것도 정리해줘.">지원사업 찾기</button>
+<button class="chip" data-q="지역 재료로 새 메뉴를 개발하고 싶어. 먼저 목표(원하는 식감, 판매가, 손님)를 짧게 3가지만 물어봐.">새 메뉴 개발</button>
+<button class="chip" data-q="지금 배합의 문제점을 찾아서 배합표를 직접 고쳐줘.">배합 고치기</button>
+<button class="chip" data-q="더 촉촉하고 부드럽게 만들고 싶어. 배합표를 직접 고쳐줘.">더 촉촉하게</button>
+<button class="chip" data-q="맛은 지키면서 개당 원가를 10% 줄이도록 배합표를 직접 고쳐줘.">원가 10% 줄이기</button>
+<button class="chip" data-q="다음 시험 굽기 3번의 계획을 세워줘. 매번 한 가지만 바꾸고, 무엇을 보고 기록할지도 알려줘.">시험 계획</button>
+<button class="chip" data-q="최근 실험 기록을 해석해서 다음에 바꿀 것 하나를 정하고 배합표에 반영해줘.">기록 해석</button>
+<button class="chip" data-q="참고 레시피 모음의 같은 종류 배합들과 지금 배합을 비교해서 다른 점과 그 효과를 알려줘.">참고 배합과 비교</button>
+<button class="chip" data-q="판매 기록을 보고 요일별 판매 흐름과 폐기를 분석하고, 내일 메뉴별로 몇 개 만들지 이유와 함께 알려줘.">판매 분석·생산량</button>
+<button class="chip" data-q="메뉴 손익표를 보고 어떤 메뉴를 밀고, 어떤 메뉴의 가격이나 배합을 바꿀지 조언해줘.">메뉴 구성 조언</button>
+<button class="chip" id="chipPhoto" type="button">사진 분석</button>
+<button class="chip" data-q="이 제품으로 동네 카페에 보낼 신메뉴 개발 제안서를 써줘. 메뉴 설명, 개당 원가, 권장 판매가를 넣어 A4 한 장 분량으로.">카페 제안서</button>
+</div>
+<div class="composer"><button class="mic" id="mic" type="button" aria-label="말로 묻기">🎤</button><textarea id="msg" placeholder="예: 내일 몇 개 만들까? / 쑥 식빵 개발하고 싶어" aria-label="비서에게 보낼 메시지"></textarea><button class="aib" id="send">보내기</button><button class="ais" id="stop" hidden>멈추기</button></div>
+<div id="fallback" hidden>
+<p class="note">이 화면에서는 앱이 아는 내용(배합, 판매·예측, 원가, 수수료, 지원사업)은 바로 답하고, 그 밖의 질문은 Claude에 물어봐야 해요. 아래 질문을 복사해서 Claude 앱에 붙여넣으세요. 지금 배합·원가·대화가 다 들어 있어요.</p>
+<textarea id="fbText" readonly style="min-height:90px"></textarea>
+<div class="row"><button class="soft sm" id="fbCopy">질문 복사</button></div>
+</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+// ---------- 재료 사전 (p·a·u·g = 참고 구매가·양·단위·1개 무게) ----------
+var D={
+"강력분":{c:"가루",r:"flour",w:.14,p:36000,a:20,u:"kg",d:"단백질 11~13%. 글루텐이 강해 식빵 등 빵 대부분의 기본.",up:"흡수율이 높아져 물을 더 넣어야 해요.",dn:"부피가 줄 수 있어요."},
+"중력분":{c:"가루",r:"flour",w:.14,p:32000,a:20,u:"kg",d:"단백질 9~10%. 면·부드러운 빵.",up:"",dn:""},
+"박력분":{c:"가루",r:"flour",w:.14,p:32000,a:20,u:"kg",d:"단백질 7~9%. 케이크·쿠키·스콘.",up:"",dn:""},
+"통밀가루":{c:"가루",r:"flour",w:.14,p:6500,a:1,u:"kg",d:"밀기울 포함. 고소하고 섬유질이 많지만 부피가 작아지고 물을 더 먹어요.",up:"고소함↑, 부피↓, 물 더 필요.",dn:"부피↑, 풍미↓."},
+"호밀가루":{c:"가루",r:"flour",w:.14,p:7000,a:1,u:"kg",d:"글루텐이 약하고 끈적임. 사워도우·독일빵.",up:"묵직하고 시큼한 풍미↑, 끈적임↑.",dn:"가벼워져요."},
+"우리밀가루":{c:"가루",r:"flour",w:.14,p:7500,a:1,u:"kg",d:"국산 밀. 구수하지만 제품마다 단백질 차이가 커서 흡수율을 실험으로 맞춰야 해요.",up:"구수함↑.",dn:""},
+"쌀가루":{c:"가루",r:"flour",w:.12,p:8000,a:1,u:"kg",d:"제빵용 쌀가루. 쫀득·촉촉하지만 많이 넣으면 부피가 줄어 글루텐 보충이 필요해요.",up:"쫀득함↑, 부피↓, 노화 느림.",dn:"부피↑."},
+"보리가루":{c:"가루",r:"flour",w:.13,p:6000,a:1,u:"kg",d:"구수한 맛. 글루텐 약함, 10~20% 대체가 적당.",up:"구수함↑, 부피↓.",dn:""},
+"T65":{c:"가루",r:"flour",w:.14,p:8500,a:1,u:"kg",d:"프랑스 밀가루. 바게트·캄파뉴용. 구수함.",up:"",dn:""},
+"T55":{c:"가루",r:"flour",w:.14,p:8000,a:1,u:"kg",d:"프랑스 밀가루. 크루아상·브리오슈.",up:"",dn:""},
+"세몰리나":{c:"가루",r:"flour",w:.14,p:6000,a:1,u:"kg",d:"듀럼밀 거친 가루. 노란빛·고소함.",up:"",dn:""},
+"물":{c:"액체",r:"liquid",w:1,p:0,a:1,u:"L",d:"반죽 수분의 기본. 물 온도로 반죽 온도를 맞춰요.",up:"촉촉·큰 기공↑, 반죽이 질어져요.",dn:"반죽이 단단하고 속이 조밀해요."},
+"우유":{c:"액체",r:"liquid",w:.87,p:2900,a:1,u:"L",d:"수분 약 87%. 고소함·부드러움·껍질 색.",up:"부드러움·색↑, 색이 빨리 나요.",dn:"담백해져요."},
+"생크림":{c:"액체",r:"liquid",w:.55,p:7500,a:1,u:"L",d:"유지방 35~38%. 풍미와 촉촉함.",up:"풍미·부드러움↑.",dn:""},
+"버터밀크":{c:"액체",r:"liquid",w:.9,p:5000,a:500,u:"ml",d:"산미가 있어 부드럽고 촉촉. 스콘·팬케이크.",up:"",dn:""},
+"계란":{c:"유제품·계란",r:"egg",w:.75,p:6000,a:30,u:"개",g:50,d:"전란(껍질 제외 약 50g). 수분 75%. 구조·풍미·색.",up:"풍미·노란색↑, 많으면 퍽퍽할 수 있어요.",dn:"담백·가벼워져요."},
+"노른자":{c:"유제품·계란",r:"egg",w:.5,p:6000,a:30,u:"개",g:18,d:"지방·유화제. 부드러움과 진한 색.",up:"부드러움·노란색↑.",dn:""},
+"흰자":{c:"유제품·계란",r:"egg",w:.88,p:6000,a:30,u:"개",g:32,d:"단백질·수분. 구조를 단단하게.",up:"단단·가벼움↑.",dn:""},
+"버터":{c:"유지",r:"fat",w:.16,p:9500,a:454,u:"g",d:"유지방 약 82%, 수분 16%. 빵에는 반죽 후반에 넣어요.",up:"부드러움·풍미↑, 많으면 부피↓.",dn:"쫄깃·담백해져요."},
+"충전용 버터":{c:"유지",r:"fat",w:.16,p:9500,a:454,u:"g",d:"접기용. 단단하고 차가워야 결이 살아요.",up:"결·풍미↑.",dn:"결이 약해져요."},
+"올리브오일":{c:"유지",r:"fat",w:0,p:12000,a:500,u:"ml",d:"액체 유지. 포카치아·치아바타에 촉촉함과 향.",up:"촉촉함·향↑.",dn:""},
+"식용유":{c:"유지",r:"fat",w:0,p:6000,a:900,u:"ml",d:"향 없는 액체 유지.",up:"",dn:""},
+"설탕":{c:"당류",r:"sugar",w:0,p:6000,a:3,u:"kg",d:"단맛·색·촉촉함. 10% 넘으면 발효가 느려져요.",up:"단맛·색↑, 발효 느려짐.",dn:"담백·색 연해짐."},
+"황설탕":{c:"당류",r:"sugar",w:.02,p:3000,a:1,u:"kg",d:"당밀 향. 쿠키를 쫀득하게.",up:"",dn:""},
+"꿀":{c:"당류",r:"sugar",w:.17,p:12000,a:500,u:"g",d:"수분 17%. 촉촉하고 색이 빨리 나요.",up:"촉촉·색↑.",dn:""},
+"연유":{c:"당류",r:"sugar",w:.27,p:5000,a:500,u:"g",d:"밀키한 단맛.",up:"",dn:""},
+"유자청":{c:"당류",r:"sugar",w:.4,p:10000,a:1,u:"kg",d:"지역 특산 향. 당·수분이 있어 설탕과 물을 줄여야 해요.",up:"향·단맛↑.",dn:""},
+"소금":{c:"기타",r:"salt",w:0,p:2500,a:1,u:"kg",d:"빵은 보통 1.5~2.2%. 맛·글루텐 강화·발효 조절.",up:"2.5% 넘으면 발효가 크게 느려져요.",dn:"밍밍하고 반죽이 처져요."},
+"인스턴트 드라이이스트":{c:"발효",r:"yeast",w:0,p:6500,a:500,u:"g",d:"바로 넣는 건조 이스트. 생이스트의 약 1/3 양.",up:"발효 빨라짐, 많으면 술냄새.",dn:"발효 느려짐."},
+"생이스트":{c:"발효",r:"yeast",w:.7,p:3500,a:500,u:"g",d:"냉장 생효모. 인스턴트의 약 3배 양.",up:"",dn:""},
+"르방":{c:"발효",r:"leaven",w:.5,p:0,a:1,u:"kg",d:"사워도우 발효종(수분 100%). 직접 키우면 재료비만 들어요.",up:"산미·발효력↑.",dn:"산미↓."},
+"탈지분유":{c:"유제품·계란",r:"other",w:.03,p:7000,a:500,u:"g",d:"우유 맛·색·부드러움. 보통 2~5%.",up:"색·풍미↑.",dn:""},
+"크림치즈":{c:"유제품·계란",r:"other",w:.55,p:16000,a:1,u:"kg",d:"수분 약 55%. 충전·반죽용.",up:"",dn:""},
+"글루텐":{c:"기타",r:"other",w:0,p:8000,a:500,u:"g",d:"활성 글루텐. 쌀가루·통밀이 많을 때 부피 보충(쌀가루의 약 10%).",up:"쫄깃·부피↑.",dn:""},
+"몰트":{c:"기타",r:"other",w:.2,p:8000,a:500,u:"g",d:"맥아. 발효·껍질 색 도움(0.2~1%).",up:"색↑.",dn:""},
+"베이킹파우더":{c:"팽창제",r:"other",w:0,p:2500,a:100,u:"g",d:"화학 팽창제. 스콘·케이크.",up:"많으면 쓴맛.",dn:""},
+"베이킹소다":{c:"팽창제",r:"other",w:0,p:2000,a:100,u:"g",d:"산성 재료와 반응. 쿠키 퍼짐·색.",up:"많으면 비린맛.",dn:""},
+"코코아파우더":{c:"향·부재료",r:"other",w:.03,p:9000,a:500,u:"g",d:"물을 흡수해 물을 조금 더 넣어야 해요.",up:"",dn:""},
+"녹차가루":{c:"향·부재료",r:"other",w:.03,p:6000,a:100,u:"g",d:"2~3%. 쓴맛·색. 물 흡수.",up:"",dn:""},
+"쑥가루":{c:"향·부재료",r:"other",w:.05,p:5000,a:100,u:"g",d:"지역 특산 향. 2~4%. 물 흡수.",up:"",dn:""},
+"흑임자":{c:"향·부재료",r:"other",w:.05,p:9000,a:500,u:"g",d:"고소함. 5~10%.",up:"",dn:""},
+"단호박 퓨레":{c:"향·부재료",r:"other",w:.88,p:6000,a:1,u:"kg",d:"수분 약 88%라 물을 줄여야 해요. 노란색·촉촉함.",up:"",dn:""},
+"고구마 퓨레":{c:"향·부재료",r:"other",w:.7,p:5000,a:1,u:"kg",d:"수분 약 70%. 단맛·촉촉함.",up:"",dn:""},
+"귀리":{c:"향·부재료",r:"other",w:.1,p:5000,a:1,u:"kg",d:"오트밀. 물을 많이 흡수해요.",up:"",dn:""},
+"다크초콜릿":{c:"향·부재료",r:"other",w:.01,p:18000,a:1,u:"kg",d:"충전·토핑.",up:"",dn:""},
+"아몬드파우더":{c:"향·부재료",r:"other",w:.05,p:16000,a:1,u:"kg",d:"고소함·촉촉함.",up:"",dn:""},
+"호두":{c:"향·부재료",r:"other",w:.04,p:17000,a:1,u:"kg",d:"충전. 구워 쓰면 떫은맛↓.",up:"",dn:""},
+"건포도":{c:"향·부재료",r:"other",w:.15,p:8000,a:1,u:"kg",d:"불려 쓰면 반죽 수분을 덜 뺏어요.",up:"",dn:""},
+"바닐라익스트랙":{c:"향·부재료",r:"other",w:.5,p:12000,a:100,u:"ml",d:"향. 0.5~1%.",up:"",dn:""},
+"흑미가루":{c:"가루",r:"flour",w:.12,p:9000,a:1,u:"kg",d:"국산 흑미. 색이 진하고 구수해요. 10~20% 대체.",up:"색·구수함↑, 부피↓.",dn:""},
+"찹쌀가루":{c:"가루",r:"flour",w:.12,p:7000,a:1,u:"kg",d:"쫄깃함. 글루텐이 없어 30~50%까지만.",up:"쫄깃함↑, 부피↓.",dn:""},
+"제빵개량제":{c:"향·부재료",r:"other",w:0,p:9000,a:1,u:"kg",d:"반죽 힘과 부피 보조. 0.5~2%.",up:"",dn:""},
+"마가린":{c:"유지",r:"fat",w:.16,p:6000,a:1,u:"kg",d:"버터 대용 유지. 단과자빵·소보로.",up:"",dn:""},
+"쇼트닝":{c:"유지",r:"fat",w:0,p:5500,a:1,u:"kg",d:"수분 없는 유지. 부드럽고 바삭함.",up:"",dn:""},
+"슈거파우더":{c:"당류",r:"sugar",w:0,p:4500,a:1,u:"kg",d:"고운 설탕. 쿠키·머랭·마카롱.",up:"",dn:""},
+"물엿":{c:"당류",r:"sugar",w:.2,p:3500,a:1,u:"kg",d:"촉촉함·광택, 노화 지연.",up:"",dn:""},
+"펄슈거":{c:"당류",r:"sugar",w:0,p:9000,a:1,u:"kg",d:"녹지 않는 우박 설탕. 리에주 와플.",up:"",dn:""},
+"옥수수전분":{c:"향·부재료",r:"other",w:.12,p:4000,a:1,u:"kg",d:"커스터드·필링 농도.",up:"",dn:""},
+"인스턴트커피":{c:"향·부재료",r:"other",w:0,p:40000,a:1,u:"kg",d:"모카빵·티라미수 향. 물에 녹여 넣어요.",up:"",dn:""},
+"당절임 밤":{c:"향·부재료",r:"other",w:.3,p:16000,a:1,u:"kg",d:"밤식빵 충전. 물기를 빼고 써요.",up:"",dn:""},
+"참기름":{c:"유지",r:"fat",w:0,p:25000,a:1,u:"kg",d:"약과 반죽.",up:"",dn:""},
+"청주":{c:"향·부재료",r:"liquid",w:.85,p:5000,a:1,u:"kg",d:"약과 반죽(소주 대체 가능).",up:"",dn:""}
+};
+var ROLE={flour:["구조가 강해져요.","구조가 약해져요."],liquid:["반죽이 질어지고 촉촉해져요.","반죽이 단단해져요."],sugar:["단맛·색↑, 발효가 느려질 수 있어요.","담백해져요."],fat:["부드러움↑, 부피는 줄 수 있어요.","쫄깃·담백해져요."],yeast:["발효가 빨라져요.","발효가 느려져요."],salt:["짠맛↑, 발효 느려짐.","밍밍하고 발효 빨라짐."],egg:["풍미·구조↑.","가벼워져요."],leaven:["산미·발효력↑.","산미↓."],other:["맛·식감이 진해져요.","맛이 약해져요."]};
+
+var P={
+"식빵":{k:"enriched",h:[60,70],pc:12,pr:6000,wt:450,bm:40,it:[["강력분",100],["물",62],["설탕",6],["소금",2],["버터",6],["인스턴트 드라이이스트",1.5],["탈지분유",3]]},
+"우유식빵":{k:"enriched",h:[58,68],pc:12,pr:6500,wt:450,bm:40,it:[["강력분",100],["우유",70],["설탕",8],["소금",1.8],["버터",8],["인스턴트 드라이이스트",1.8]]},
+"쌀식빵":{k:"enriched",h:[60,70],pc:12,pr:7000,wt:450,bm:40,it:[["강력분",70],["쌀가루",30],["물",64],["설탕",6],["소금",2],["버터",6],["인스턴트 드라이이스트",1.8],["글루텐",3]]},
+"바게트":{k:"lean",h:[65,78],pc:12,pr:4500,wt:350,bm:45,it:[["T65",100],["물",70],["소금",2],["인스턴트 드라이이스트",.4],["몰트",.3]]},
+"치아바타":{k:"lean",h:[72,85],pc:12,pr:3500,wt:200,bm:40,it:[["강력분",100],["물",78],["소금",2],["인스턴트 드라이이스트",.5],["올리브오일",4]]},
+"포카치아":{k:"lean",h:[70,85],pc:4,pr:9000,wt:900,bm:40,it:[["강력분",100],["물",75],["올리브오일",8],["소금",2],["인스턴트 드라이이스트",1]]},
+"베이글":{k:"lean",h:[52,62],pc:16,pr:3500,wt:110,bm:35,it:[["강력분",100],["물",58],["설탕",4],["소금",2],["인스턴트 드라이이스트",1],["몰트",.5]]},
+"캄파뉴(사워도우)":{k:"lean",h:[68,85],pc:6,pr:9000,wt:800,bm:60,it:[["강력분",90],["통밀가루",10],["물",72],["르방",20],["소금",2]]},
+"모닝빵":{k:"enriched",h:[55,66],pc:32,pr:1000,wt:45,bm:30,it:[["강력분",100],["우유",60],["계란",10],["설탕",10],["소금",1.8],["버터",10],["인스턴트 드라이이스트",2]]},
+"단과자빵":{k:"sweet",h:[52,65],pc:24,pr:2500,wt:60,bm:30,it:[["강력분",100],["우유",55],["계란",10],["설탕",18],["소금",1.5],["버터",12],["인스턴트 드라이이스트",2.5]]},
+"브리오슈":{k:"sweet",h:[48,62],pc:20,pr:3000,wt:60,bm:35,it:[["T55",100],["계란",50],["우유",10],["설탕",12],["소금",2],["버터",50],["인스턴트 드라이이스트",2.5]]},
+"크루아상":{k:"sweet",h:[48,58],pc:24,pr:4000,wt:70,bm:35,it:[["T55",100],["물",30],["우유",25],["설탕",10],["소금",2],["버터",8],["인스턴트 드라이이스트",1.5],["충전용 버터",50]]},
+"스콘":{k:"cake",h:[0,100],pc:16,pr:3500,wt:80,bm:30,it:[["박력분",100],["버터",35],["우유",45],["설탕",15],["소금",1],["베이킹파우더",4]]},
+"파운드케이크":{k:"cake",h:[0,100],pc:4,pr:15000,wt:600,bm:60,it:[["박력분",100],["버터",100],["설탕",100],["계란",100],["소금",1]]},
+"쿠키":{k:"cake",h:[0,100],pc:40,pr:2500,wt:40,bm:25,it:[["박력분",100],["버터",60],["황설탕",40],["설탕",20],["계란",20],["소금",1],["베이킹소다",1]]}
+};
+var SUB={
+"버터":[{to:"올리브오일",f:.82,wd:.16,n:"버터의 82%가 지방이라 오일은 0.82배, 버터 속 수분만큼 물을 더해요. 담백·촉촉해져요."},{to:"식용유",f:.82,wd:.16,n:"향 없는 오일로 대체. 오래 촉촉하지만 버터 풍미는 사라져요."}],
+"우유":[{to:"물",f:.9,wd:0,add:[["탈지분유",.1]],n:"우유 = 물 90% + 분유 10%. 맛 차이가 거의 없고 원가가 줄어요."},{to:"생크림",f:.6,wd:.4,n:"생크림 60% + 물 40%로 수분을 맞춰요. 풍미가 진해져요."}],
+"설탕":[{to:"꿀",f:.8,wd:-.14,n:"꿀이 더 달아 0.8배, 꿀 속 수분만큼 물을 줄여요. 굽는 온도를 10℃ 낮추세요."},{to:"황설탕",f:1,wd:0,n:"같은 양. 당밀 향과 촉촉함이 더해져요."}],
+"생이스트":[{to:"인스턴트 드라이이스트",f:.33,wd:.7,n:"인스턴트는 생이스트의 약 1/3. 생이스트 속 수분만큼 물을 더해요."}],
+"인스턴트 드라이이스트":[{to:"생이스트",f:3,wd:-2.1,n:"생이스트는 3배. 그 속 수분만큼 물을 줄여요."},{to:"르방",lev:true,n:"르방 20%로 바꾸고 르방 속 가루·물만큼 밀가루와 물을 줄여요. 발효 시간이 2~3배 길어져요."}],
+"강력분":[{to:"우리밀가루",flat:true,wd:-3,n:"국산 밀은 흡수율이 낮은 편이라 물을 3%p 줄여 시작해요."},{to:"T65",flat:true,wd:-2,n:"구수해지고 흡수율이 조금 낮아요."}],
+"계란":[{to:"우유",f:.85,wd:0,n:"계란 없는 배합. 구조가 약해지고 색이 연해져요."}]
+};
+var LOC={
+"쌀가루 (국산 쌀)":{ing:"쌀가루",mode:"replace",def:25,rng:"20~30%",wpp:0,gl:.1,n:"밀가루 일부를 쌀가루로 바꾸고 글루텐을 쌀가루의 10% 보충해요."},
+"우리밀 (국산 밀)":{ing:"우리밀가루",mode:"replace",def:50,rng:"30~100%",wpp:-.05,gl:0,n:"구수함↑. 흡수율이 낮은 경우가 많아 물을 조금 줄여요."},
+"보리":{ing:"보리가루",mode:"replace",def:15,rng:"10~20%",wpp:.3,gl:.05,n:"구수한 맛. 물을 조금 더 흡수해요."},
+"단호박":{ing:"단호박 퓨레",mode:"add",def:20,rng:"15~25%",wpp:-.8,gl:0,n:"넣는 양의 약 80%만큼 물을 빼요."},
+"고구마":{ing:"고구마 퓨레",mode:"add",def:20,rng:"15~20%",wpp:-.6,gl:0,n:"넣는 양의 약 60%만큼 물을 줄여요."},
+"쑥":{ing:"쑥가루",mode:"add",def:3,rng:"2~4%",wpp:1,gl:0,n:"1%당 물 1%p를 더해요. 쌉싸름한 향."},
+"녹차":{ing:"녹차가루",mode:"add",def:2.5,rng:"2~3%",wpp:1,gl:0,n:"1%당 물 1%p 추가."},
+"흑임자":{ing:"흑임자",mode:"add",def:6,rng:"5~10%",wpp:0,gl:0,n:"반죽 마지막에 섞어요."},
+"유자":{ing:"유자청",mode:"add",def:12,rng:"10~15%",wpp:-.4,gl:0,sc:.5,n:"물을 줄이고 설탕을 넣는 양의 절반만큼 줄여요."},
+"귀리":{ing:"귀리",mode:"add",def:12,rng:"10~15%",wpp:1,gl:0,n:"1%당 물 1%p 추가(미리 불리면 좋아요)."}
+};
+
+// ---------- 비용 정보 사전 (2026년 10월 조사) ----------
+var REFD="2026.10 조사";
+var REF=[
+ {c:"판매 채널 수수료",n:"배민 중개수수료 (매출 상위 35%)",v:"7.8%",ok:1,s:"https://www.hankookilbo.com/news/article/A2025012209340005718",d:"2025년 2월부터 차등 적용(기존 9.8%). 신규 입점 가게는 7.8%."},
+ {c:"판매 채널 수수료",n:"배민 중개수수료 (중간 35~80%)",v:"6.8%",ok:1,s:"https://www.hankookilbo.com/news/article/A2025012209340005718",d:"매출 순위로 구간이 정해져요."},
+ {c:"판매 채널 수수료",n:"배민 중개수수료 (하위 20%)",v:"2.0%",ok:1,s:"https://www.hankookilbo.com/news/article/A2025012209340005718",d:"2026년 하위 구간을 30%로 넓히는 안이 논의 중이에요."},
+ {c:"판매 채널 수수료",n:"쿠팡이츠 중개수수료",v:"2.0~7.8%",ok:1,s:"https://www.ddaily.co.kr/page/view/2025022310465893867",d:"배민과 같은 구간별 요율(기존 9.8%)."},
+ {c:"판매 채널 수수료",n:"배달앱 결제수수료",v:"약 3%",ok:0,s:"",d:"중개수수료와 별도로 붙어요. 앱·계약마다 다르니 정산서로 확인하세요."},
+ {c:"판매 채널 수수료",n:"배달앱 수수료 법정 상한",v:"논의 중",ok:1,s:"https://news.mtn.co.kr/article/2026101314254253482",d:"2026년 10월 국회에 중개·결제·광고 합계 15% 상한 법안들이 올라와 있어요. 통과되면 바뀌어요."},
+ {c:"판매 채널 수수료",n:"스마트스토어 네이버페이 결제수수료",v:"3.74%",ok:1,s:"https://wikidocs.net/blog/@knarchive/14162/",d:"카테고리·결제수단·영세 여부에 따라 달라요."},
+ {c:"판매 채널 수수료",n:"스마트스토어 판매(매출연동) 수수료",v:"약 2~3%",ok:0,s:"https://wikidocs.net/blog/@knarchive/14162/",d:"네이버쇼핑을 통해 들어온 주문에 붙어요. 판매자센터 안내로 확인하세요."},
+ {c:"카드 수수료",n:"신용카드 우대수수료 (연 매출 3억 이하)",v:"0.40%",ok:1,s:"https://thecheck.co.kr/?p=3657",d:"체크카드 0.15%."},
+ {c:"카드 수수료",n:"신용카드 우대수수료 (3억~5억)",v:"1.00%",ok:1,s:"https://thecheck.co.kr/?p=3657",d:"체크카드 0.75%."},
+ {c:"카드 수수료",n:"신용카드 우대수수료 (5억~10억)",v:"1.15%",ok:1,s:"https://thecheck.co.kr/?p=3657",d:"체크카드 0.90%."},
+ {c:"카드 수수료",n:"신용카드 우대수수료 (10억~30억)",v:"1.45%",ok:1,s:"https://thecheck.co.kr/?p=3657",d:"체크카드 1.15%. 간편결제(페이) 수수료는 따로예요."},
+ {c:"세금",n:"간이과세자 기준",v:"연 1억 400만원 미만",ok:1,s:"https://glasswallet.com/calculate/vat/simplified-taxpayer",d:"2024년 7월부터 8,000만원에서 올랐어요. 직전 연도 매출로 다음 해 7월에 바뀌어요."},
+ {c:"세금",n:"간이과세 부가세 (음식점업·제과점)",v:"매출의 1.5%",ok:1,s:"https://glasswallet.com/calculate/vat/simplified-taxpayer",d:"부가가치율 15% × 10%. 제조업은 20% × 10% = 2%."},
+ {c:"세금",n:"간이과세 부가세 납부 면제",v:"연 4,800만원 미만",ok:0,s:"",d:"이 경우 부가세 납부가 면제돼요. 신고는 해야 해요. 세무서·세무사로 확인하세요."},
+ {c:"세금",n:"일반과세자 부가세",v:"판매가의 1/11",ok:1,s:"",d:"판매가에 10%가 포함돼 있다고 보고 계산해요. 재료·포장 매입 세액은 공제되지만 이 앱은 단순화해서 빼지 않아요."},
+ {c:"인건비",n:"2026 최저시급",v:"10,320원",ok:1,s:"https://yellowit.co.kr/tag/%ec%95%8c%eb%b0%94%ec%8b%9c%ea%b8%89/",d:"월 209시간 기준 2,156,880원."},
+ {c:"인건비",n:"4대보험 사업주 부담",v:"약 11.2%",ok:1,s:"https://taxguide.im/blog/social-insurance-rate-increase-guide",d:"국민연금 4.75% + 건강·장기요양 4.07% + 고용 0.9% + 산재 평균 1.47%. 업종·인원에 따라 조금 달라요. 두루누리 지원으로 줄일 수 있어요."},
+ {c:"인건비",n:"주휴수당",v:"시급의 약 20%",ok:0,s:"",d:"주 15시간 이상 일하면 1주에 하루치 임금이 더 붙어요(주 40시간이면 정확히 20%)."},
+ {c:"인건비",n:"퇴직금",v:"임금의 약 8.3%",ok:0,s:"",d:"1년 이상, 주 15시간 이상 일한 사람에게 1년에 한 달치를 줘요. 빠른 설정에는 넣지 않았어요."},
+ {c:"배달·배송",n:"배민 배달비 사장님 부담",v:"1,900~3,400원",ok:1,s:"https://www.khan.co.kr/article/202506192022005",d:"매출 구간에 따라 달라요. 하위 구간은 최대 2,900원."},
+ {c:"배달·배송",n:"택배비 (소상공인 계약)",v:"약 2,500~3,500원",ok:0,s:"",d:"물량·크기·택배사마다 달라요. 편의점·우체국 창구는 더 비싸요."},
+ {c:"배달·배송",n:"택배 박스 (소형)",v:"개당 약 300~600원",ok:0,s:"",d:"100개 묶음 기준 시세."},
+ {c:"배달·배송",n:"아이스팩 · 보냉봉투",v:"약 300원 · 700원",ok:0,s:"",d:"생크림·크림치즈 제품은 여름에 필요해요."},
+ {c:"포장재",n:"종이봉투 3호 (18.5cm)",v:"장당 약 48원",ok:1,s:"https://www.foodspring.co.kr/goods/detail/17938",d:"1,000매 47,690원(온라인 판매가)."},
+ {c:"포장재",n:"식빵 봉투 (OPP·PP)",v:"장당 약 80~120원",ok:0,s:"",d:"100매 8,000~12,000원 시세."},
+ {c:"포장재",n:"개별 OPP 봉투 (쿠키·소형)",v:"장당 약 30~50원",ok:0,s:"",d:"접착식 기준."},
+ {c:"포장재",n:"습기 제거제 (실리카겔·탈산소제)",v:"개당 약 30원",ok:0,s:"",d:"쿠키·구움과자 유통기한을 늘려요."},
+ {c:"포장재",n:"스티커 라벨",v:"장당 약 20~30원",ok:0,s:"",d:"제품명·원재료·유통기한 표시용. 판매용은 식품 표시 기준을 지켜야 해요."},
+ {c:"포장재",n:"케이크·구움과자 상자",v:"개당 약 500~1,500원",ok:0,s:"",d:"크기·인쇄 여부에 따라 차이가 커요."},
+ {c:"포장재",n:"종이 쇼핑백",v:"개당 약 150~400원",ok:0,s:"",d:""},
+ {c:"재료",n:"계란 특란 30구",v:"약 6,000원",ok:1,s:"https://www.news1.kr/economy/trend/6177875",d:"2026년 시세. 계절·조류독감에 따라 크게 움직여요."}
+];
+var PACKS={bag:[{n:"종이봉투 3호",p:47690,q:1000},{n:"스티커 라벨",p:12000,q:500}],
+ loaf:[{n:"식빵 봉투",p:10000,q:100},{n:"스티커 라벨",p:12000,q:500}],
+ cookie:[{n:"개별 OPP 봉투",p:4000,q:100},{n:"습기 제거제",p:3000,q:100},{n:"스티커 라벨",p:12000,q:500}],
+ box:[{n:"상자",p:90000,q:100},{n:"종이 쇼핑백",p:25000,q:100},{n:"스티커 라벨",p:12000,q:500}]};
+function renderRef(){var h="",cat="";REF.forEach(function(r){if(r.c!==cat){cat=r.c;h+='<h3 style="margin:10px 0 0;font-size:14px">'+esc(cat)+'</h3>';}
+  h+='<div class="ref"><b>'+esc(r.n)+'<span class="tag '+(r.ok?"v1":"v0")+'">'+(r.ok?"확인":"추정")+'</span></b><span class="v">'+esc(r.v)+'</span><p>'+esc(r.d)+(r.s?' <a href="'+esc(r.s)+'" target="_blank" rel="noopener">출처</a>':'')+'</p></div>';});
+  $("refList").innerHTML=h+'<p class="note">조사 기준: '+REFD+'. 법·요율이 바뀌면 이 표도 바뀌어요.</p>';}
+function quickApply(){
+  var ch=$("qChannel").value,rev=+$("qRev").value,biz=$("qBiz").value,st=$("qStaff").value,pk=$("qPack").value,ap=$("qApp").value,out=[];
+  var cardR=[0,.4,1.0,1.15,1.45][rev];
+  if(ch==="store"){G.fee=0;G.card=cardR;G.ship=0;G.perOrder=1;out.push("카드 수수료 "+cardR+"% (연 매출 구간 우대수수료)");}
+  else if(ch==="app"){var t={low:[2,2500],mid:[6.8,2900],top:[7.8,3400]}[ap];G.fee=r1(t[0]+3);G.card=0;G.ship=t[1];G.perOrder=Math.max(1,num(G.perOrder)>1?G.perOrder:3);
+    out.push("채널 수수료 "+G.fee+"% (중개 "+t[0]+"% + 결제 약 3%)");out.push("배달비 내 부담 "+won(t[1])+"/주문, 주문당 "+G.perOrder+"개로 가정");}
+  else if(ch==="online"){G.fee=r1(3.74+2.73);G.card=0;G.ship=3000+450+300;G.perOrder=Math.max(1,num(G.perOrder)>1?G.perOrder:4);
+    out.push("채널 수수료 "+G.fee+"% (결제 3.74% + 판매 약 2.73%, 판매자센터로 확인)");out.push("택배비 3,000 + 박스 450 + 아이스팩 300 = "+won(G.ship)+"/주문 (손님이 배송비를 내면 그만큼 빼세요)");}
+  else{G.fee=0;G.card=0;G.ship=0;G.perOrder=1;out.push("카페 납품은 수수료 없이 계좌이체로 가정. 납품가는 보통 소매가보다 낮게 잡아요(판매가 칸에 납품가를 넣으세요)");}
+  var yearly=num(S.price)*num(G.fMonthly)*12;
+  if(biz==="gen"||(biz==="auto"&&yearly>=104000000)||ch==="b2b"&&biz!=="simple"){G.vatMode="gen";out.push("부가세: 일반과세자 (판매가의 1/11)"+(biz==="auto"?(ch==="b2b"&&yearly<104000000?" · 카페 납품은 세금계산서를 요구하는 경우가 많아 일반과세로 가정했어요":" · 예상 연 매출 "+won(yearly)+" 기준"):""));}
+  else{G.vatMode="food";out.push("부가세: 간이과세자 음식점·제과점 1.5%"+(biz==="auto"?" · 예상 연 매출 "+won(yearly)+"이 1억 400만원 미만이라 간이로 추정":"")+(yearly<48000000?" · 연 4,800만원 미만이면 납부 면제일 수 있어요":""));}
+  G.wageExtra={solo:0,short:11,full:31}[st];
+  out.push({solo:"인건비 가산 0% (혼자, 시급 칸은 내 시간값)",short:"인건비 가산 11% (4대보험 사업주 부담 약 11.2%)",full:"인건비 가산 31% (주휴 약 20% + 4대보험 약 11%)"}[st]);
+  snap();S.pack=JSON.parse(JSON.stringify(PACKS[pk]));out.push("포장재: "+S.pack.map(function(p){return p.n;}).join(", ")+" (비용 정보 사전 시세)");
+  fillInputs();render();save();
+  $("qOut").innerHTML='<div class="msg ok" style="white-space:pre-wrap">'+esc("이렇게 채웠어요\n- "+out.join("\n- "))+'</div>';toast("빠른 설정을 적용했어요.");
+}
+
+// ---------- 참고 레시피 (일반 표준 배합: 교재·업계에서 널리 쓰는 비율을 바탕으로 한 참고값) ----------
+var STD=[
+ {n:"식빵 (스트레이트법)",t:"식빵",o:"한국·일본",it:"강력분 100, 물 62, 설탕 5, 소금 2, 버터 4, 탈지분유 3, 인스턴트 드라이이스트 1.2",d:"가장 기본. 반죽 온도 27℃."},
+ {n:"우유식빵 (일본식)",t:"우유식빵",o:"일본",it:"강력분 100, 우유 65, 생크림 10, 설탕 10, 소금 1.8, 버터 8, 인스턴트 드라이이스트 1.5",d:"부드럽고 단맛이 도는 쇼쿠빵 계열."},
+ {n:"쌀식빵",t:"쌀식빵",o:"한국",it:"강력분 70, 쌀가루 30, 물 63, 설탕 6, 소금 2, 버터 5, 글루텐 3, 인스턴트 드라이이스트 1.5",d:"쌀가루 30%까지는 글루텐 보충으로 부피 유지."},
+ {n:"통밀빵 (70%)",t:"식빵",o:"독일·북유럽",it:"통밀가루 70, 강력분 30, 물 75, 꿀 5, 소금 2, 버터 3, 인스턴트 드라이이스트 1.2",d:"통밀은 물을 많이 먹어 수분을 높여요."},
+ {n:"바게트",t:"바게트",o:"프랑스",it:"T65 100, 물 68, 소금 2, 인스턴트 드라이이스트 0.5, 몰트 0.2",d:"오토리즈 20~30분, 저온 장시간 발효면 이스트를 줄여요."},
+ {n:"캄파뉴 (르방)",t:"캄파뉴(사워도우)",o:"프랑스",it:"강력분 80, 통밀가루 20, 물 75, 르방 20, 소금 2",d:"르방 수분 100% 기준."},
+ {n:"호밀빵 (70%)",t:"캄파뉴(사워도우)",o:"독일",it:"호밀가루 70, 강력분 30, 물 78, 르방 40, 소금 2",d:"호밀은 산이 있어야 잘 굳어요. 반죽이 끈적한 게 정상."},
+ {n:"치아바타",t:"치아바타",o:"이탈리아",it:"강력분 100, 물 80, 소금 2.2, 인스턴트 드라이이스트 0.4, 올리브오일 3",d:"폴딩으로 힘을 줘요."},
+ {n:"포카치아",t:"포카치아",o:"이탈리아",it:"강력분 100, 물 75, 올리브오일 10, 소금 2, 인스턴트 드라이이스트 1",d:"오일 일부는 팬과 윗면에."},
+ {n:"베이글",t:"베이글",o:"미국",it:"강력분 100, 물 55, 설탕 4, 소금 2, 인스턴트 드라이이스트 0.8, 몰트 1",d:"된반죽. 데친 뒤 구워요."},
+ {n:"모닝빵",t:"모닝빵",o:"한국",it:"강력분 100, 우유 60, 계란 10, 설탕 10, 소금 1.8, 버터 10, 인스턴트 드라이이스트 2",d:""},
+ {n:"단과자빵",t:"단과자빵",o:"한국·일본",it:"강력분 100, 우유 48, 계란 15, 설탕 20, 소금 1.5, 버터 12, 탈지분유 3, 인스턴트 드라이이스트 2.5",d:"고당 반죽. 고당용 이스트 권장."},
+ {n:"브리오슈",t:"브리오슈",o:"프랑스",it:"T55 100, 계란 55, 우유 10, 설탕 12, 소금 2, 버터 60, 인스턴트 드라이이스트 1.5",d:"버터는 글루텐이 생긴 뒤 나눠 넣어요. 냉장 휴지."},
+ {n:"크루아상",t:"크루아상",o:"프랑스",it:"T55 100, 물 30, 우유 25, 설탕 12, 소금 2, 버터 5, 인스턴트 드라이이스트 1.5, 충전용 버터 55",d:"3절 3회 또는 4절 2회 접기."},
+ {n:"스콘",t:"스콘",o:"영국",it:"박력분 100, 버터 30, 우유 50, 설탕 15, 소금 1, 베이킹파우더 5",d:"버터는 차갑게, 반죽은 최소한으로."},
+ {n:"파운드케이크",t:"파운드케이크",o:"영국·프랑스",it:"박력분 100, 버터 100, 설탕 100, 계란 100, 소금 1",d:"1:1:1:1 기본 비율."},
+ {n:"마들렌",t:"파운드케이크",o:"프랑스",it:"박력분 100, 계란 100, 설탕 90, 버터 100, 꿀 10, 베이킹파우더 3",d:"반죽을 냉장 휴지하면 배꼽이 잘 나와요."},
+ {n:"초코칩 쿠키",t:"쿠키",o:"미국",it:"박력분 100, 버터 70, 황설탕 50, 설탕 30, 계란 25, 소금 1.5, 베이킹소다 1, 다크초콜릿 80",d:"반죽 숙성(냉장 하루)하면 맛이 깊어져요."}
+];
+function parseItems(txt){var out=[];String(txt||"").split(/[\n,]+/).forEach(function(part){var m=part.trim().match(/^(.+?)\s*([\d.]+)\s*(%|g|kg|ml|개)?$/);if(!m)return;var n=m[1].trim(),v=num(m[2]),u=m[3]||"%";if(u==="kg")v*=1000;if(u==="개")v*=50;if(n&&v>0)out.push({n:n,v:v,u:u});});
+  var fl=0;out.forEach(function(x){if(info(x.n).r==="flour")fl+=x.v;});
+  var grams=out.some(function(x){return x.u!=="%";});
+  return out.map(function(x){return{n:x.n,pct:r1(grams&&fl>0?x.v/fl*100:x.v)};});}
+function allRefs(){var u=lsGet("lab_refs",[]);return STD.map(function(r){return{n:r.n,t:r.t,o:r.o,items:parseItems(r.it),d:r.d,src:"일반 표준 배합(참고)",std:true};}).concat(u);}
+function mixText(items){return items.map(function(x){return x.n+" "+r1(x.pct);}).join(" · ");}
+function compareText(ref){var cur={},rf={},names={},L=[];S.items.forEach(function(x){cur[x.n]=(cur[x.n]||0)+x.pct;names[x.n]=1;});ref.items.forEach(function(x){rf[x.n]=(rf[x.n]||0)+x.pct;names[x.n]=1;});
+  Object.keys(names).forEach(function(n){var a=r1(cur[n]||0),b=r1(rf[n]||0),d=r1(a-b);if(Math.abs(d)>=.5)L.push(n+": 지금 "+a+"% / 참고 "+b+"% ("+(d>0?"+":"")+d+")");});
+  return L.length?L.join("\n"):"거의 같은 배합이에요.";}
+function renderRefs(){var f=$("refFilter").value,q=$("refQ").value.trim(),h="";
+  allRefs().forEach(function(r,i){if(f&&r.t!==f)return;if(q&&(r.n+r.o+r.t+mixText(r.items)).indexOf(q)<0)return;
+    h+='<div class="lib"><h4>'+esc(r.n)+' <span class="tag '+(r.std?"v0":"v1")+'">'+(r.std?"표준 참고":"내가 모은")+'</span></h4><div class="meta">'+esc(r.o||"-")+' · '+esc(r.t)+' · 출처: '+(/^https?:/.test(r.src||"")?'<a href="'+esc(r.src)+'" target="_blank" rel="noopener">링크</a>':esc(r.src||"-"))+'</div><div class="mix">'+esc(mixText(r.items))+'</div>'+(r.d?'<div class="meta">'+esc(r.d)+'</div>':'')+
+      '<div class="row"><button class="soft sm" data-rcmp="'+i+'">지금 배합과 비교</button><button class="soft sm" data-rload="'+i+'">배합표로 불러오기</button>'+(r.std?'':'<button class="x" data-rdel="'+i+'">삭제</button>')+'</div><div class="cmp" id="rc'+i+'" hidden></div></div>';});
+  $("refLib").innerHTML=h||'<p class="note">조건에 맞는 레시피가 없어요.</p>';}
+
+// ---------- 평균 기본 배합 (2026.10 조사: 판매 순위 + 기능사 배합 + 국내외 전문서·실무 레시피 비교) ----------
+// it 형식: "재료 평균[최소-최대]"  · c: 표준*=기능사 배합(2차 출처 확인, 큐넷 원문 대조 필요) / 추정A=3개 이상 출처 평균 / 추정B=1~2개 출처+교재 범위, 테스트 필수
+var AVG_CATS=["식빵·식사빵","단과자·조리빵","트렌드·유럽빵","로컬 재료","케이크","구움과자·타르트"];
+var AVG=[
+ {n:"우유식빵",cat:"식빵·식사빵",t:"우유식빵",o:"한국",pop:"판매 비중 3위(식빵 7.2%), 두 프랜차이즈 톱10, 정통우유식빵 하루 4만3천 개",m:"스트레이트",it:"강력분 100, 우유 68[60-72], 인스턴트 드라이이스트 1, 제빵개량제 0.5[0-1], 소금 2[1.8-2], 설탕 6[5-10], 버터 5[4-8]",pr:"반죽 27℃ · 1차 27℃ 75~80% 60분 · 2차 35~38℃ 85% 40분 · 180g×3(1kg 틀) · 170/180℃ 30~35분",ex:"물 없이 우유로만 수분을 잡아 풍미와 색이 강해요. 우유 고형분 때문에 색이 빨리 나니 윗불을 낮추세요.",f:"옆면이 안으로 꺼짐 → 2차 과발효 또는 덜 구움",c:"표준*",sc:4},
+ {n:"버터식빵·풀먼",cat:"식빵·식사빵",t:"식빵",o:"한국·일본",pop:"식빵 판매 비중 상위, 기능사 과제",m:"스트레이트",it:"강력분 100, 물 62[58-66], 인스턴트 드라이이스트 1.2, 소금 2, 설탕 6[5-8], 버터 8[6-12], 탈지분유 3",pr:"반죽 27℃ · 1차 60~70분 · 분할 = 틀 용적÷3.4~4.0 · 180/190℃ 30~35분",ex:"풀먼은 뚜껑을 덮어 구우니 2차를 틀 높이 1cm 아래에서 멈춰요.",f:"모서리가 둥글다 → 발효 부족 / 뚜껑 자국이 진하다 → 과발효",c:"추정A",sc:3},
+ {n:"탕종·유다네 식빵",cat:"식빵·식사빵",t:"식빵",o:"일본·대만",pop:"촉촉한 식빵 트렌드",m:"탕종(밀가루 5~10%를 물과 1:1~1:5로 호화)",it:"강력분 100, 물 72[68-78], 인스턴트 드라이이스트 1.2, 소금 1.8, 설탕 8[6-10], 버터 6",pr:"탕종 65℃ 이상 호화 → 식혀 냉장 2시간 이상 · 반죽 26℃ · 1차 50~60분 · 220~250g×2 · 180℃ 30분",ex:"전분을 미리 익혀 물을 더 붙잡게 해서 촉촉하고 덜 굳어요. 강력분 100에는 탕종에 쓴 밀가루가 포함돼요.",f:"반죽이 질다고 덧가루를 많이 쓰면 장점이 사라져요",c:"추정B",sc:2},
+ {n:"밤식빵",cat:"식빵·식사빵",t:"식빵",o:"한국",pop:"뚜레쥬르 톱10, 기능사 과제",m:"스트레이트",it:"강력분 100, 물 52, 계란 10, 인스턴트 드라이이스트 1.5, 소금 2, 설탕 12, 버터 8, 탈지분유 3, 당절임 밤 35[30-40]",pr:"반죽 27℃ · 1차 60분 · 450g(밤 80g 포함) · 180/160℃ 30~35분",ex:"단과자에 가까운 반죽이라 색이 빨리 나요. 윗면 토핑은 버터·설탕·계란·박력분을 1:1:1:1 근처로 얇게 짜요.",f:"반죽이 질어짐 → 밤 물기를 완전히 안 뺐음",c:"추정B",sc:2},
+ {n:"모닝빵·버터롤",cat:"식빵·식사빵",t:"모닝빵",o:"한국",pop:"파리바게뜨 톱10(굿모닝롤), 기능사 과제",m:"스트레이트",it:"강력분 100, 물 50[45-55], 계란 10[8-15], 인스턴트 드라이이스트 1.5, 소금 2, 설탕 10[8-12], 버터 10[8-12], 탈지분유 3",pr:"반죽 27℃ · 1차 60분 · 40~50g · 190/160℃ 12~15분",ex:"단과자빵보다 설탕을 줄인 식사용 소프트롤이에요.",f:"표면이 터짐 → 2차 부족 / 바닥이 탐 → 아랫불 과함",c:"추정A",sc:3},
+ {n:"쌀식빵",cat:"식빵·식사빵",t:"쌀식빵",o:"한국",pop:"기능사 과제, 쌀 소비 트렌드",m:"스트레이트",it:"강력분 75[70-80], 쌀가루 25[20-30], 물 63[60-66], 인스턴트 드라이이스트 1.5, 소금 1.8, 설탕 8, 버터 5, 탈지분유 4",pr:"반죽 27℃ · 1차 50~60분 · 198g×3 · 170/180℃ 30분",ex:"쌀가루는 글루텐이 없어 30%를 넘기면 부피가 급히 줄어요. 밀보다 물을 덜 먹어 가수를 2~3% 낮춰요.",f:"부피가 작다 → 쌀가루 과다, 글루텐 보충 필요",c:"추정B",sc:2},
+ {n:"통밀빵",cat:"식빵·식사빵",t:"식빵",o:"한국·유럽",pop:"건강빵 수요, 기능사 과제",m:"스트레이트",it:"강력분 80, 통밀가루 20[20-50], 물 63[60-70], 인스턴트 드라이이스트 1.5, 소금 2, 설탕 3, 버터 7, 탈지분유 2, 몰트 1.5",pr:"반죽 25~27℃ · 1차 50~60분 · 200g · 200/170℃ 20~25분",ex:"통밀 겨가 글루텐을 끊어요. 통밀 10%를 늘릴 때마다 물을 약 2% 늘리고, 오토리즈 20분이 효과적이에요.",f:"부피가 작고 무겁다 → 물 부족 또는 믹싱 과다",c:"추정A",sc:3},
+ {n:"햄버거번",cat:"식빵·식사빵",t:"모닝빵",o:"미국",pop:"버거·샌드위치 수요(샌드위치 판매 비중 2위)",m:"스트레이트",it:"강력분 100, 우유 55[50-60], 계란 10[10-20], 인스턴트 드라이이스트 1.5, 소금 2, 설탕 8[6-14], 버터 10[8-20]",pr:"반죽 26℃ · 1차 60분 · 70~90g · 190℃ 12~15분",ex:"패티 즙을 견디면서 부드러워야 해요. 계란·버터를 올리면 브리오슈 번이 돼요.",f:"납작함 → 2차 부족",c:"추정A",sc:3},
+
+ {n:"단팥빵",cat:"단과자·조리빵",t:"단과자빵",o:"한국·일본",pop:"파리바게뜨·뚜레쥬르 공통 1위, 10년째 상위",m:"비상스트레이트(기능사) / 스트레이트",it:"강력분 100, 물 48[45-53], 계란 15[10-15], 생이스트 4[4-7], 제빵개량제 1, 소금 2, 설탕 16[16-20], 버터 12[10-12], 탈지분유 3",pr:"일반 반죽 27℃ 1차 60분(비상법 30℃ 15~30분) · 반죽 40~50g + 앙금 40~50g · 190/150℃ 12~15분",ex:"앙금 비율이 높아 반죽이 얇아야 맛있어요. 가운데를 눌러 주면 윗면 공동이 안 생겨요. 앙금은 속재료의 팥앙금 참고.",f:"굽다가 터짐 → 이음매를 덜 봉함",c:"표준*",sc:3},
+ {n:"소보로빵",cat:"단과자·조리빵",t:"단과자빵",o:"한국",pop:"뚜레쥬르 톱10, 10년째 상위",m:"스트레이트",it:"강력분 100, 물 47, 계란 15, 생이스트 4, 제빵개량제 1, 소금 2, 설탕 16, 마가린 18, 탈지분유 2",pr:"반죽 27℃ · 1차 60분 · 반죽 50g + 소보로 30g · 190/160℃ 15~18분",ex:"토핑이 무거워 2차를 일반 빵의 80%에서 멈춰요. 토핑은 속재료의 소보로 토핑 참고.",f:"빵이 주저앉음 → 토핑 과다 / 토핑이 흘러내림 → 유지가 무르거나 과혼합",c:"표준*",sc:3},
+ {n:"크림빵(슈크림빵)",cat:"단과자·조리빵",t:"단과자빵",o:"한국·일본",pop:"뚜레쥬르 톱10, 기능사 과제",m:"스트레이트",it:"강력분 100, 물 53, 계란 10, 생이스트 4, 제빵개량제 2, 소금 2, 설탕 16, 쇼트닝 12, 탈지분유 2",pr:"반죽 27℃ · 1차 60분 · 45g + 커스터드 30g · 190/150℃ 12~15분",ex:"굽기 전에 크림을 넣는 방식은 가장자리를 잘 봉해야 끓어 넘치지 않아요. 크림은 속재료의 커스터드 참고.",f:"크림이 새어 나옴 → 봉합 불량",c:"표준*",sc:2},
+ {n:"모카빵",cat:"단과자·조리빵",t:"단과자빵",o:"한국",pop:"기능사 과제, 동네빵집 스테디셀러",m:"스트레이트",it:"강력분 100, 물 45, 계란 10, 생이스트 5, 제빵개량제 1, 소금 2, 설탕 15, 버터 12, 탈지분유 3, 인스턴트커피 1.5, 건포도 15",pr:"반죽 27℃ · 1차 27℃ 75~80% 약 50분 · 반죽 250g + 비스킷 100g · 180/160℃ 25~30분",ex:"커피는 물에 녹여 넣어요. 비스킷이 갈라지는 건 정상이에요. 토핑은 속재료의 모카빵 비스킷 참고.",f:"속이 덜 익음 → 비스킷이 너무 두꺼움",c:"표준*",sc:2},
+ {n:"소시지빵",cat:"단과자·조리빵",t:"단과자빵",o:"한국",pop:"파리바게뜨 2위, 뚜레쥬르 4위(낙엽소시지)",m:"스트레이트",it:"강력분 80, 중력분 20, 물 52, 계란 5, 생이스트 4, 소금 2, 설탕 11, 마가린 9, 탈지분유 3",pr:"반죽 27℃ · 1차 60분 · 70g + 소시지, 양파·마요 토핑 · 210/170℃ 12~15분",ex:"가위로 자르는 낙엽 모양은 칼집 깊이를 일정하게 하는 게 핵심이에요.",f:"바닥이 눅눅함 → 토핑 수분 과다",c:"추정B",sc:2},
+ {n:"시나몬롤",cat:"단과자·조리빵",t:"단과자빵",o:"미국·북유럽",pop:"카페 베이커리 인기",m:"스트레이트",it:"강력분 100, 우유 50[45-55], 계란 15[10-20], 인스턴트 드라이이스트 1.8[1.5-2], 소금 1.5, 설탕 15[10-20], 버터 15[10-25]",pr:"반죽 27℃ · 1차 60분 · 0.5~0.7cm로 밀어 필링 후 말아 40~80g 컷 · 180℃ 15~20분",ex:"미국식은 버터·설탕이 많고 크림치즈 프로스팅, 북유럽식은 카다몸을 넣고 덜 달아요. 필링은 속재료의 시나몬 필링 참고.",f:"가운데가 튀어나옴 → 너무 빡빡하게 말았거나 2차 부족",c:"추정A",sc:3},
+ {n:"꽈배기·이스트도넛",cat:"단과자·조리빵",t:"단과자빵",o:"한국",pop:"파리바게뜨 톱10(찹쌀도넛), 시장 간식 수요",m:"스트레이트",it:"강력분 80, 박력분 20, 우유 50[45-55], 계란 12[10-15], 인스턴트 드라이이스트 1.5, 소금 1.5, 설탕 10[8-12], 버터 10",pr:"반죽 27℃ · 1차 60분 · 2차는 짧고 건조하게(습도 70~75%) · 50~60g · 180~185℃ 기름 면당 1~1.5분",ex:"흰 띠(화이트링)가 선명하면 발효와 기름 온도가 잘 맞은 거예요. 찹쌀도넛은 찹쌀가루를 30~50% 대체해요.",f:"기름을 많이 먹음 → 2차 습도가 높아 표면이 젖음",c:"추정A",sc:3},
+
+ {n:"소금빵",cat:"트렌드·유럽빵",t:"모닝빵",o:"일본(시오판)",pop:"판매 비중 1위 15.7%, 파리바게뜨 6위, 뚜레쥬르 3위",m:"스트레이트 + 냉장 휴지",it:"강력분 85[67-100], 박력분 15[0-33], 우유 62[60-65], 인스턴트 드라이이스트 1.3, 소금 1.8, 설탕 5[2-10], 버터 6[3-10], 충전용 버터 20[18-25]",pr:"반죽 24~26℃ · 1차 40~60분 → 냉장 휴지 · 2차 30~32℃(버터가 녹지 않게) · 50~60g + 가염버터 8~15g · 210~230℃ 12~15분",ex:"녹은 버터가 바닥을 튀기듯 구워 윗면은 쫄깃, 바닥은 바삭해요. 충전 버터는 반죽 무게의 18~25%로, 원가에서 가장 큰 몫이에요.",f:"바닥이 타고 속이 비지 않음 → 2차 온도가 높아 버터가 미리 샘. 냉동 버터 막대를 쓰세요",c:"추정A",sc:5},
+ {n:"크루아상",cat:"트렌드·유럽빵",t:"크루아상",o:"프랑스",pop:"판매 비중 4위 5.3%, 파리바게뜨 7위",m:"라미네이팅(3절 3회 또는 3절+4절)",it:"강력분 85[70-100], 박력분 15[0-30], 우유 58[55-62], 인스턴트 드라이이스트 1.5[1.2-2], 소금 2, 설탕 12[10-13], 버터 6[0.5-10], 충전용 버터 50[45-60]",pr:"반죽 22~24℃ · 냉장 1박 · 2차 24~27℃ 75% 1.5~2시간 · 삼각 55~70g · 190~200℃ 15~20분",ex:"3절 3회면 약 27겹이 표준이에요. 접는 횟수를 늘린다고 좋아지지 않아요. 물·우유는 합쳐서 표기했어요.",f:"층이 없음·바닥에 버터가 흥건 → 2차가 28℃를 넘어 버터가 녹음 또는 과발효",c:"추정A",sc:4},
+ {n:"뺑오쇼콜라·데니시",cat:"트렌드·유럽빵",t:"크루아상",o:"프랑스·덴마크",pop:"크루아상 반죽 공유로 재고 절감",m:"라미네이팅",it:"강력분 100, 우유 55, 계란 10, 인스턴트 드라이이스트 1.5, 소금 2, 설탕 13, 버터 6, 충전용 버터 50, 다크초콜릿 10",pr:"크루아상과 동일 · 60~70g · 190℃ 16~18분",ex:"데니시는 크루아상 반죽에 계란 10~15%, 설탕 12~15%를 더해요.",f:"가운데가 질척함 → 굽기 전 크림·과일 수분 과다",c:"추정A",sc:3},
+ {n:"베이글",cat:"트렌드·유럽빵",t:"베이글",o:"미국",pop:"판매 비중 5위 5.2%, 2022년보다 가격 44% 상승에도 판매 유지",m:"스트레이트(된반죽) + 데치기",it:"강력분 100, 물 58[55-63], 인스턴트 드라이이스트 0.8[0.5-1.5], 소금 2, 몰트 2[1-5], 식용유 1.5[0-3]",pr:"반죽 25~27℃ · 1차 50분 또는 냉장 1박 · 100~120g · 끓는 물에 앞뒤 30~60초 데친 뒤 220~230℃ 15~20분",ex:"가수가 낮아 쫄깃해요. 한국식 부드러운 베이글은 가수를 높여요.",f:"표면이 쭈글쭈글 → 과발효 상태로 데침 / 작고 매끈 → 발효 부족",c:"추정A",sc:3},
+ {n:"바게트",cat:"트렌드·유럽빵",t:"바게트",o:"프랑스",pop:"해외 베이커리 기본 품목",m:"풀리시 또는 스트레이트",it:"T65 100, 물 70[65-76], 인스턴트 드라이이스트 0.4[0.2-1], 소금 2",pr:"반죽 24℃ · 1차 1.5~3시간(폴딩) · 350g · 240~250℃ 스팀 22~25분",ex:"Hamelman 풀리시 바게트 66%, 트라디시옹 76%. 가수가 높을수록 기공이 크지만 성형이 어려워요.",f:"쿠프가 안 벌어짐 → 성형 장력 약함, 스팀 부족 또는 과발효",c:"추정A",sc:4},
+ {n:"깜빠뉴",cat:"트렌드·유럽빵",t:"캄파뉴(사워도우)",o:"프랑스",pop:"건강빵·식사빵 수요",m:"르방",it:"강력분 85, 통밀가루 15[10-20], 물 75[70-80], 르방 20[15-30], 소금 2",pr:"반죽 24~26℃ · 1차 3~5시간 + 냉장 저온 발효 · 500~900g · 250℃ 스팀 후 230℃ 35~45분",ex:"산미와 오래가는 맛은 르방에서 나와요.",f:"속이 끈적임 → 르방 과숙 또는 덜 구움 / 납작함 → 장력 부족 또는 과발효",c:"추정A",sc:3},
+ {n:"사워도우",cat:"트렌드·유럽빵",t:"캄파뉴(사워도우)",o:"미국·유럽",pop:"아티잔 베이커리 대표",m:"르방",it:"강력분 90, 통밀가루 10, 물 78[72-85], 르방 20, 소금 2",pr:"반죽 25℃ · 1차 4~6시간 + 냉장 12~16시간 · 800~900g · 250→230℃ 40~45분",ex:"72~78%가 일반적인 범위예요. 처음 매장에서는 72%로 시작하세요.",f:"퍼짐 → 가수 과다 또는 과발효",c:"추정A",sc:3},
+ {n:"치아바타",cat:"트렌드·유럽빵",t:"치아바타",o:"이탈리아",pop:"샌드위치용 수요",m:"비가 또는 풀리시",it:"강력분 100, 물 78[73-85], 인스턴트 드라이이스트 0.5, 소금 2, 올리브오일 1.5[0-3]",pr:"반죽 24℃ · 폴딩 3~4회 2~3시간 · 200~300g으로 잘라서 · 230~240℃ 스팀 20~25분",ex:"성형하지 않고 잘라서 구워요. 73% 이상은 숙련이 필요해요.",f:"기공이 작음 → 폴딩 부족 또는 덧가루 과다",c:"추정A",sc:3},
+ {n:"포카치아",cat:"트렌드·유럽빵",t:"포카치아",o:"이탈리아",pop:"카페·샌드위치",m:"스트레이트 / 냉장",it:"강력분 100, 물 75[70-85], 인스턴트 드라이이스트 0.8, 소금 2.2, 올리브오일 5",pr:"반죽 24℃ · 냉장 1박 · 팬 1cm²당 0.8~1g · 220~230℃ 20~25분",ex:"손가락 구멍에 올리브오일과 소금물을 채우면 표면이 바삭해요. 팬에도 오일 5~10%를 더 둘러요.",f:"바닥이 허옇다 → 팬 오일 부족",c:"추정A",sc:3},
+ {n:"브리오슈",cat:"트렌드·유럽빵",t:"브리오슈",o:"프랑스",pop:"해외 기본 품목, 브리오슈 번 트렌드",m:"스트레이트(버터 나중에)",it:"강력분 100, 계란 45[20-60], 우유 10[0-36], 인스턴트 드라이이스트 1.5, 소금 2, 설탕 10[6-14], 버터 50[20-80]",pr:"반죽 24℃ 이하 · 1차 1시간 + 냉장 1박 · 50g 또는 틀 · 180℃ 25~35분(작은 것 12분)",ex:"버터는 글루텐이 생긴 뒤 차가운 채로 조금씩 넣어야 분리되지 않아요.",f:"반죽이 기름지게 분리 → 버터를 빨리 넣었거나 반죽 온도 높음",c:"추정A",sc:4},
+ {n:"호밀빵",cat:"트렌드·유럽빵",t:"캄파뉴(사워도우)",o:"독일",pop:"건강빵, 기능사 과제",m:"스트레이트 / 사워",it:"강력분 70, 호밀가루 30[20-40], 물 63[60-70], 인스턴트 드라이이스트 1.5, 소금 2, 황설탕 3, 쇼트닝 5, 탈지분유 2",pr:"반죽 25~27℃ · 1차 50~60분 · 330g · 200/180℃ 30~35분",ex:"호밀은 물을 많이 잡아 끈적해요. 젖은 손으로 다루고, 호밀 50%가 넘으면 사워(산)가 필요해요.",f:"속이 떡짐 → 호밀 과다인데 산 없음",c:"추정B",sc:2},
+ {n:"프레첼",cat:"트렌드·유럽빵",t:"베이글",o:"독일",pop:"해외 기본 품목",m:"스트레이트(된반죽) + 알칼리",it:"강력분 100, 물 58[55-62], 인스턴트 드라이이스트 1, 소금 2, 버터 5, 몰트 1",pr:"반죽 25℃ · 45분 + 냉장 건조 · 80~100g · 3~4% 베이킹소다 끓는 물 처리 후 210~220℃ 12~15분",ex:"알칼리 처리로 짙은 갈색과 특유의 향이 나요. 가성소다는 보안경·장갑 필수라 매장에서는 베이킹소다를 권해요.",f:"색이 연함 → 알칼리 농도 부족",c:"추정B",sc:2},
+ {n:"잉글리시 머핀",cat:"트렌드·유럽빵",t:"모닝빵",o:"영국·미국",pop:"브런치 수요",m:"스트레이트",it:"강력분 100, 우유 70[65-75], 인스턴트 드라이이스트 1.2, 소금 1.8, 설탕 3, 버터 4",pr:"반죽 26℃ · 1차 60분 · 70~80g, 옥수수가루 묻힘 · 그리들 150~160℃ 앞뒤 7~8분(+오븐 170℃ 5분)",ex:"가수가 높아 포크로 가르면 기공이 살아 있어요.",f:"겉은 타고 속이 덜 익음 → 불이 셈",c:"추정B",sc:2},
+ {n:"슈톨렌(시즌)",cat:"트렌드·유럽빵",t:"브리오슈",o:"독일",pop:"크리스마스 시즌 상품",m:"중종",it:"강력분 100, 우유 30, 인스턴트 드라이이스트 3, 소금 1.2, 설탕 12, 버터 45[35-60], 아몬드파우더 15, 건포도 80[60-100]",pr:"반죽 25℃ · 중종 30분 + 본반죽 30분 · 500~750g · 170~180℃ 40~50분, 녹인 버터·슈거파우더 코팅",ex:"과일·버터가 많아 발효가 느려 이스트를 많이 써요. 3~4주 숙성하면 맛이 깊어져요. 마지판은 아몬드파우더로 표기했어요.",f:"부피가 안 남 → 과일 넣기 전 발효 부족",c:"추정B",sc:2},
+ {n:"파네토네(시즌)",cat:"트렌드·유럽빵",t:"브리오슈",o:"이탈리아",pop:"시즌 고가 상품(초보 비추천)",m:"천연효모 2단계",it:"강력분 100, 르방 40[30-50], 노른자 35[30-40], 설탕 27[25-30], 버터 35[30-40], 건포도 55[50-60]",pr:"반죽 26~28℃ · 1단계 12시간 + 2단계 6~8시간 · 500g·1kg · 170℃ 40~55분, 거꾸로 매달아 식힘",ex:"산도와 효모 관리가 핵심인 고난도 품목이에요.",f:"주저앉음 → 거꾸로 식히지 않음",c:"추정B",sc:1},
+
+ {n:"쑥 식빵",cat:"로컬 재료",t:"식빵",o:"한국",pop:"지역 재료 응용",m:"스트레이트",it:"강력분 100, 물 65, 쑥가루 4[3-5], 인스턴트 드라이이스트 1.2, 소금 2, 설탕 6, 버터 6, 탈지분유 3",pr:"기본 식빵 공정과 같음 · 쑥가루만큼 가수 +2~3%",ex:"쑥가루는 섬유질이 물을 먹고 글루텐을 약하게 해요. 5%를 넘으면 쓴맛과 부피 감소가 커요.",f:"쓴맛·부피 감소 → 쑥가루 과다",c:"추정B",sc:1},
+ {n:"흑미 식빵",cat:"로컬 재료",t:"식빵",o:"한국",pop:"지역 재료 응용",m:"스트레이트",it:"강력분 85, 흑미가루 15[10-20], 물 66, 인스턴트 드라이이스트 1.3, 소금 2, 설탕 6, 버터 6",pr:"기본 식빵 공정 · 오븐 온도 10℃ 낮춤",ex:"안토시아닌 때문에 색이 진하게 나요. 가수를 3% 정도 높여요.",f:"표면이 탄 듯함 → 오븐 온도를 낮추지 않음",c:"추정B",sc:1},
+ {n:"고구마·단호박 빵",cat:"로컬 재료",t:"식빵",o:"한국",pop:"지역 재료 응용",m:"스트레이트",it:"강력분 100, 물 45, 고구마 퓨레 25[20-30], 인스턴트 드라이이스트 1.3, 소금 2, 설탕 8, 버터 6, 탈지분유 3",pr:"퓨레 수분(약 70%)만큼 물을 줄임 · 색이 빨리 나니 윗불을 낮춤",ex:"퓨레의 수분과 당을 계산하지 않으면 질어지고 색이 빨리 나요. 단호박 퓨레로 바꿔도 같은 원리예요.",f:"반죽이 질다 → 퓨레 수분 미반영",c:"추정B",sc:1},
+ {n:"우리밀 빵",cat:"로컬 재료",t:"식빵",o:"한국",pop:"국산 밀 지원 사업과 연계",m:"스트레이트 + 저온 장시간",it:"우리밀가루 100, 물 60[58-63], 인스턴트 드라이이스트 1, 소금 2, 설탕 5, 버터 5",pr:"믹싱은 짧게 · 오토리즈 활용 · 저온 장시간 발효",ex:"국산 강력분은 단백질이 낮은 편이라 수입 강력분보다 가수를 2~3% 낮추고 믹싱을 짧게 해요.",f:"퍼짐 → 수입 밀과 같은 배합을 씀",c:"추정B",sc:1},
+ {n:"보리빵",cat:"로컬 재료",t:"식빵",o:"한국",pop:"지역 재료 응용",m:"스트레이트",it:"강력분 75, 보리가루 25[20-30], 물 66, 인스턴트 드라이이스트 1.5, 소금 2, 설탕 5, 버터 5",pr:"기본 식빵 공정",ex:"보리 베타글루칸이 물을 잡아 무거워지니 강력분 비율을 유지하세요.",f:"묵직함 → 보리 과다",c:"추정B",sc:1},
+ {n:"찹쌀빵",cat:"로컬 재료",t:"단과자빵",o:"한국",pop:"쫄깃 식감 트렌드(프랜차이즈 찹쌀 라인)",m:"스트레이트",it:"강력분 65, 찹쌀가루 35[30-50], 우유 55, 계란 10, 인스턴트 드라이이스트 1.5, 소금 1.5, 설탕 12, 버터 8",pr:"반죽 27℃ · 1차 50분 · 50~60g · 180℃ 12~15분",ex:"찹쌀가루는 쫄깃함을 주지만 글루텐이 없어 부피가 줄어요.",f:"딱딱하게 굳음 → 식은 뒤 노화. 당일 판매",c:"추정B",sc:1},
+
+ {n:"파운드케이크",cat:"케이크",t:"파운드케이크",o:"영국·프랑스",pop:"기능사 과제, 선물 수요",m:"크림법",it:"박력분 100, 설탕 90[80-100], 버터 90[80-100], 계란 90[80-100], 소금 1, 탈지분유 1[0-2], 베이킹파우더 1[0-2]",pr:"반죽 23℃ · 비중 0.75~0.85 · 틀의 60~70% · 170℃ 40~50분",ex:"1파운드씩 1:1:1:1로 넣던 데서 이름이 왔어요. 계란은 7~8번 나눠 넣어요.",f:"반죽이 분리 → 계란을 한꺼번에 넣음 / 칼집은 굽고 10분 뒤에",c:"표준*",sc:4},
+ {n:"제누아즈(생크림 케이크 시트)",cat:"케이크",t:"파운드케이크",o:"프랑스",pop:"생크림 케이크 기본",m:"공립법(43℃ 중탕)",it:"박력분 100, 계란 180[160-200], 설탕 100[90-120], 버터 15[10-20], 우유 10[0-20]",pr:"반죽 25℃ · 비중 0.45~0.55 · 틀 높이 60% · 170~180℃ 25~35분(1호)",ex:"녹인 버터(50~60℃)는 반죽 일부와 먼저 섞은 뒤 넣어야 거품이 안 꺼져요.",f:"가운데가 꺼짐 → 덜 구웠거나 거품 부족",c:"추정A",sc:3},
+ {n:"시폰케이크",cat:"케이크",t:"파운드케이크",o:"미국",pop:"기능사 과제",m:"시폰법",it:"박력분 100, 설탕 130, 계란 150, 소금 1.5, 베이킹파우더 2.5, 식용유 40, 물 30",pr:"반죽 23℃ · 비중 0.45~0.55 · 틀에 물 분무 후 60~70% · 170~180℃ 30~35분, 뒤집어 식힘",ex:"설탕 130은 노른자 쪽 65 + 머랭 65로 나눠요. 식용유를 써서 냉장해도 굳지 않아요.",f:"주저앉음 → 뒤집어 식히지 않음 / 틀에 기름칠하면 못 올라가요",c:"표준*",sc:2},
+ {n:"롤케이크",cat:"케이크",t:"파운드케이크",o:"한국·일본",pop:"실키롤케익 5개국 1,249만 개, 기네스 기록",m:"별립 또는 공립",it:"박력분 100, 계란 250[200-300], 설탕 120[100-140], 우유 30[20-40], 식용유 15[10-20]",pr:"비중 0.4~0.5 · 0.8~1cm 시트 · 190~200℃ 10~12분",ex:"짧고 뜨겁게 구워야 말 때 안 갈라져요. 미지근할 때 안쪽에 얕은 칼집을 넣고 말아요.",f:"말 때 갈라짐 → 오래 구움",c:"추정B",sc:2},
+ {n:"카스텔라",cat:"케이크",t:"파운드케이크",o:"일본·대만",pop:"선물·간식 수요",m:"공립(나가사키) / 별립·오일(대만식)",it:"강력분 100, 계란 300, 설탕 300, 꿀 40[30-50]",pr:"비중 0.4~0.5 · 나무틀 · 160℃ 50~60분",ex:"나가사키식 기준이에요. 강력분과 많은 설탕으로 쫀득해요. 대만식은 계란 100 : 박력 30 : 설탕 30 : 우유 30 : 오일 25 비율로 150℃ 중탕해요.",f:"윗면이 갈라짐 → 온도가 높음",c:"추정B",sc:2},
+ {n:"베이크드 치즈케이크",cat:"케이크",t:"",o:"미국(뉴욕)",pop:"카페 디저트 수요",m:"크림치즈 혼합",base:"크림치즈 = 100 기준",it:"크림치즈 100, 설탕 30[25-35], 계란 30[25-35], 생크림 25[20-30], 박력분 3[2-4]",pr:"재료 모두 실온 · 160℃ 중탕 50~60분, 오븐 안에서 서서히 식힘",ex:"공기가 들어가면 갈라져서 저속으로 섞어요. 크러스트는 따로 만들어요.",f:"표면 균열 → 과열이나 급랭",c:"추정A",sc:3},
+ {n:"수플레 치즈케이크",cat:"케이크",t:"",o:"일본",pop:"카페 디저트 수요",m:"별립(머랭)",base:"크림치즈 = 100 기준",it:"크림치즈 100, 우유 50[40-60], 버터 20, 노른자 25, 흰자 50, 설탕 35, 박력분 17[15-20]",pr:"머랭은 부드러운 뿔 · 150~160℃ 중탕 60~70분",ex:"머랭 상태가 전부예요. 부드러운 뿔이 정답이에요.",f:"갈라짐 → 머랭이 단단 / 주저앉음 → 머랭이 약함",c:"추정B",sc:2},
+ {n:"바스크 치즈케이크",cat:"케이크",t:"",o:"스페인",pop:"판매 상위 디저트 트렌드",m:"일괄 혼합",base:"크림치즈 = 100 기준",it:"크림치즈 100, 계란 35[33-37], 설탕 37[28-44], 생크림 43[20-55], 박력분 2[1-4.5]",pr:"유산지를 틀 위로 5cm 이상 · 200~230℃ 50~65분 · 하룻밤 냉장 후 자름",ex:"크러스트 없이 고온으로 겉을 태워 캐러멜 맛과 흐르는 속을 만들어요. 생크림이 많을수록 속이 더 흘러요.",f:"속이 너무 단단 → 오래 구웠거나 생크림 부족",c:"추정A",sc:4},
+ {n:"머핀",cat:"케이크",t:"파운드케이크",o:"미국",pop:"카페 기본 품목, 기능사 과제",m:"크림법 / 머핀법",it:"박력분 100, 설탕 70[50-90], 버터 50[40-60], 계란 50[40-60], 우유 60[50-80], 베이킹파우더 3[2-4]",pr:"반죽 22℃ · 컵의 70~80% · 처음 5분 200℃ 후 180~190℃ 20~25분",ex:"머핀법은 섞는 횟수를 최소로 해요.",f:"긴 구멍·질김 → 과하게 섞음",c:"추정A",sc:3},
+ {n:"브라우니",cat:"케이크",t:"쿠키",o:"미국",pop:"카페·선물 수요",m:"녹인 버터법",it:"박력분 100, 다크초콜릿 150[100-200], 버터 150[120-200], 설탕 220[180-260], 계란 180[150-200], 코코아파우더 15[0-30]",pr:"사각팬 2.5~3cm · 170~175℃ 25~30분",ex:"쫀득한 브라우니는 밀가루가 적고 설탕·계란이 많아요. 이쑤시개에 촉촉한 부스러기가 묻을 때 꺼내요.",f:"케이크처럼 퍽퍽 → 오래 구움",c:"추정A",sc:3},
+
+ {n:"마들렌",cat:"구움과자·타르트",t:"파운드케이크",o:"프랑스",pop:"구움과자 선물 세트 기본",m:"녹인 버터법",it:"박력분 100, 계란 100[90-110], 설탕 100[90-110], 버터 100[90-110], 베이킹파우더 3[2-4], 꿀 5[0-10]",pr:"반죽 냉장 1시간~1박 · 190~200℃ 10~12분",ex:"차가운 반죽을 뜨거운 오븐에 넣는 온도 차가 배꼽을 만들어요.",f:"배꼽이 안 나옴 → 휴지 부족 또는 오븐이 약함",c:"추정A",sc:3},
+ {n:"피낭시에",cat:"구움과자·타르트",t:"쿠키",o:"프랑스",pop:"구움과자 선물 세트 기본",m:"일괄 혼합",base:"아몬드파우더 + 밀가루 = 100 기준",it:"아몬드파우더 65[60-75], 박력분 35[25-40], 흰자 75[65-82], 슈거파우더 88[77-97], 버터 70[41-91], 꿀 5[0-10]",pr:"브라운버터를 40~50℃에서 섞기 · 180~200℃ 10~15분",ex:"흰자를 거품 내지 않는 게 핵심이에요. 브라운버터가 고소함을 대부분 만들어요. 커스터드에서 남은 흰자 활용에 좋아요.",f:"밋밋함 → 버터를 덜 태움 / 씀 → 너무 태움",c:"추정A",sc:4},
+ {n:"다쿠아즈",cat:"구움과자·타르트",t:"쿠키",o:"프랑스·일본·한국",pop:"국내 구움과자 인기",m:"머랭",base:"흰자 = 100 기준",it:"흰자 100, 설탕 32[30-35], 아몬드파우더 70[65-75], 슈거파우더 60[55-65], 박력분 5[0-10]",pr:"단단한 머랭에 가루를 2~3번 폴딩 · 슈거파우더 2번 뿌림 · 170~180℃ 12~15분",ex:"겉은 바삭, 속은 쫀득해요. 필링은 버터크림이나 가나슈를 써요.",f:"퍼짐 → 머랭이 약함 / 크랙 없음 → 슈거파우더 부족",c:"추정B",sc:2},
+ {n:"마카롱",cat:"구움과자·타르트",t:"쿠키",o:"프랑스",pop:"국내 디저트 인기",m:"이탈리안 머랭",base:"아몬드파우더 = 100 기준",it:"아몬드파우더 100, 슈거파우더 100, 설탕 105[100-110], 흰자 75[60-90], 물 27[25-30]",pr:"시럽 118℃ · 마카로나주 후 20~40분 건조 · 140~150℃ 12~15분",ex:"흰자는 절반은 페이스트용, 절반은 머랭용이에요. 1:1:1 비율이라 안정적이에요.",f:"피에(발)가 없음 → 건조 부족 또는 오븐 약함 / 속이 빔 → 마카로나주 부족 또는 오븐 과열",c:"추정A",sc:4},
+ {n:"스콘(영국식)",cat:"구움과자·타르트",t:"스콘",o:"영국",pop:"카페 기본",m:"비스킷법",it:"박력분 100, 버터 20[15-25], 설탕 10[8-15], 우유 50[45-55], 베이킹파우더 5[4-6], 소금 1, 계란 5[0-15]",pr:"차가운 버터 · 최소한으로 반죽 · 커터로 수직 커팅 · 210~220℃ 12~15분",ex:"덜 달아 클로티드크림과 잼을 곁들여요.",f:"덜 솟음 → 커터를 비틀어 옆면이 봉해짐",c:"추정A",sc:3},
+ {n:"스콘(미국식·카페형)",cat:"구움과자·타르트",t:"스콘",o:"미국·한국",pop:"국내 카페 스콘",m:"비스킷법 + 접기",it:"박력분 100, 버터 40[30-50], 설탕 20[15-25], 생크림 40, 계란 15, 베이킹파우더 4",pr:"접어 겹 만들기 · 냉장 휴지 · 190~200℃ 18~20분",ex:"버터가 많아 결이 생기고 바삭해요.",f:"딱딱하고 결이 없음 → 버터가 녹은 채로 반죽",c:"추정B",sc:2},
+ {n:"버터쿠키",cat:"구움과자·타르트",t:"쿠키",o:"한국",pop:"기능사 과제",m:"크림법",it:"박력분 100, 버터 70[67-70], 설탕 50[50-67], 계란 28[25-33], 소금 1, 바닐라익스트랙 0.5",pr:"짤주머니로 짜기 · 200/150℃ 10~12분",ex:"버터:설탕:계란:밀가루 = 2:1.5:1:3 근처예요. 기능사 계란 양은 출처마다 25~30%로 달라요.",f:"퍼짐 → 크림화 과다 / 짜기 힘듦 → 크림화 부족",c:"표준*",sc:3},
+ {n:"초코칩쿠키",cat:"구움과자·타르트",t:"쿠키",o:"미국",pop:"카페 기본",m:"크림법",it:"중력분 100, 버터 75[60-90], 황설탕 55, 설탕 45, 계란 35, 베이킹소다 0.9[0.8-1], 소금 1.5, 다크초콜릿 100[80-120]",pr:"반죽 24~72시간 냉장 숙성 · 180℃ 10~12분",ex:"황설탕이 많으면 쫀득하게 퍼지고, 백설탕이 많으면 바삭해요.",f:"너무 퍼짐 → 숙성 없이 바로 구움",c:"추정A",sc:3},
+ {n:"타르트 반죽(쉬크레)",cat:"구움과자·타르트",t:"쿠키",o:"프랑스",pop:"타르트·에그타르트 기본",m:"크림법 / 사블라주",it:"박력분 100, 버터 50[40-60], 슈거파우더 35[30-40], 계란 20, 아몬드파우더 8[0-15], 소금 0.5",pr:"냉장 휴지 2시간 이상 · 160~170℃ 15~20분(블라인드)",ex:"단단하고 바삭해요. 사블레는 버터 60·설탕 40·노른자 15~20으로 더 부서지듯 바삭하고, 브리제는 중력분 100·버터 50·찬물 25·소금 2로 달지 않은 파이용이에요.",f:"오븐에서 줄어듦 → 휴지 부족 또는 늘려서 깔음",c:"추정A",sc:3},
+ {n:"에그타르트",cat:"구움과자·타르트",t:"",o:"포르투갈·홍콩",pop:"국내 디저트 인기",m:"크러스트 + 커스터드 필링",base:"필링: 우유+생크림 = 100 기준",it:"우유 60, 생크림 40, 노른자 28[25-30], 설탕 30[25-35], 옥수수전분 4[3-5]",pr:"필링 체에 거르기 · 포르투갈식 230~250℃ 12~15분 / 홍콩식 200℃",ex:"포르투갈식은 퍼프 크러스트에 고온으로 표면을 태우고, 홍콩식은 쿠키 크러스트에 매끈해요.",f:"부풀었다 꺼짐 → 온도가 너무 높음",c:"추정B",sc:2},
+ {n:"슈",cat:"구움과자·타르트",t:"쿠키",o:"프랑스",pop:"슈크림 수요(뚜레쥬르 톱10)",m:"호화 반죽",it:"박력분 100, 물 180[160-200], 버터 85[80-90], 소금 2, 설탕 2[0-4], 계란 190[180-200]",pr:"반죽 호화 후 계란을 조금씩 · 주걱에서 V자로 떨어질 때까지 · 200℃ 15분 → 180℃ 15~20분, 문 열지 않기",ex:"계란 양은 반죽 되기를 보고 정해요.",f:"안 부풂 → 반죽이 됨 / 퍼짐 → 반죽이 질음 / 꺼짐 → 덜 구움",c:"추정A",sc:3},
+ {n:"퍼프 페이스트리",cat:"구움과자·타르트",t:"크루아상",o:"프랑스",pop:"파이·에그타르트 크러스트",m:"라미네이팅(무발효)",it:"중력분 100, 물 50[45-55], 소금 2, 버터 10, 충전용 버터 80[70-100]",pr:"3절 6회 또는 4절 4회 · 200~210℃",ex:"이스트 없이 버터 속 수분이 수증기로 바뀌며 부풀어요.",f:"수축 → 휴지 부족 / 안 부풂 → 버터가 녹음",c:"추정A",sc:3},
+ {n:"리에주 와플",cat:"구움과자·타르트",t:"브리오슈",o:"벨기에",pop:"간식·카페",m:"이스트 반죽",it:"강력분 100, 우유 35[30-40], 계란 22[20-25], 버터 55[50-60], 인스턴트 드라이이스트 1.5, 펄슈거 35[30-40]",pr:"펄슈거는 마지막에 · 와플기 180℃ 3~4분",ex:"펄슈거가 캐러멜화되어 바삭해요.",f:"설탕이 녹아 끈적 → 펄슈거를 일찍 넣음",c:"추정B",sc:2},
+ {n:"약과",cat:"구움과자·타르트",t:"",o:"한국",pop:"할매니얼 트렌드",m:"기름·꿀 반죽",it:"중력분 100, 참기름 17[15-20], 꿀 15, 청주 12[10-15]",pr:"반죽은 겹치기만 · 110~120℃ 기름에서 부풀린 뒤 140~150℃에서 색 · 조청:꿀 1:1 집청",ex:"치대면 글루텐 때문에 단단해져요.",f:"속이 안 익고 겉만 탐 → 처음부터 고온",c:"추정B",sc:2}
+];
+var FILL=[
+ {n:"커스터드(크렘 파티시에르)",base:"우유 = 100",it:"우유 100, 노른자 22[15-35], 설탕 23[20-25], 옥수수전분 8[5-10], 버터 10[0-21], 바닐라익스트랙 0.5",pr:"노른자·설탕·전분 섞고 뜨거운 우유로 템퍼링 → 끓기 시작 후 1~2분 더 젓기 → 얼음물로 급랭, 랩 밀착",keep:"냉장 0~4℃ 2~3일",f:"묽어짐 → 덜 끓임 / 덩어리 → 템퍼링을 급하게 함",c:"추정A"},
+ {n:"디플로마트 크림",base:"커스터드 = 100",it:"커스터드 100, 생크림 40[30-50], 젤라틴 1.5[1-2]",pr:"커스터드를 부드럽게 푼 뒤 7분 휘핑 크림 폴딩",keep:"냉장 24시간 이내",f:"흐름 → 크림을 과하게 섞음",c:"추정A"},
+ {n:"샹티이(생크림)",base:"생크림 = 100",it:"생크림 100, 설탕 8[6-10], 바닐라익스트랙 0.3",pr:"크림과 볼을 4℃ 이하로 · 아이싱 80~90%, 짜기 90% 휘핑",keep:"냉장 당일~24시간",f:"분리 → 과휘핑 또는 온도 높음. 식물성 20~30%를 섞으면 안정성↑ 맛↓",c:"추정A"},
+ {n:"이탈리안 머랭 버터크림",base:"흰자 = 100",it:"흰자 100, 설탕 210[200-220], 버터 350[300-380]",pr:"시럽 116~121℃를 머랭에 가늘게 → 체온 이하로 식은 뒤 실온 버터",keep:"냉장 1주 · 냉동 1개월(다시 휘핑)",f:"몽글 분리 → 너무 차가움, 볼을 살짝 데움 / 수프처럼 묽음 → 머랭이 뜨거움",c:"추정A"},
+ {n:"앙글레즈 버터크림",base:"노른자 = 100",it:"노른자 100, 설탕 100, 우유 100, 버터 325[300-350]",pr:"앙글레즈 82~84℃ → 식힌 뒤 버터와 휘핑",keep:"냉장 5일",f:"알갱이 → 85℃를 넘김",c:"추정B"},
+ {n:"간단 버터크림",base:"버터 = 100",it:"버터 100, 슈거파우더 100[100-200], 우유 7[5-10]",pr:"버터를 충분히 크림화 → 체 친 슈거파우더",keep:"실온 1일 · 냉장 1주",f:"서걱거림 → 슈거파우더를 체 치지 않음. 한국 소비자에게는 1:1이 상한",c:"추정A"},
+ {n:"가나슈",base:"초콜릿 = 100",it:"다크초콜릿 100, 생크림 100[50-200]",pr:"크림을 끓기 직전까지 데워 붓고 1분 뒤 가운데부터 유화. 디핑 1:1~1:1.5 · 필링 1:1 · 트러플·마카롱 2:1 · 휘핑 가나슈 1:2(냉장 4시간 후 휘핑) · 밀크 2.5:1 · 화이트 3:1",keep:"18℃ 이하 2~3일 · 냉장 1~2주",f:"기름이 뜸 → 과열·비율 오류, 따뜻한 크림 조금 넣어 다시 유화",c:"추정A"},
+ {n:"크림치즈 프로스팅",base:"크림치즈 = 100",it:"크림치즈 100, 버터 25[20-30], 슈거파우더 25[20-30], 레몬즙 2",pr:"크림치즈와 버터를 따로 풀어 같은 온도로 맞춘 뒤 섞기",keep:"냉장 3~4일",f:"묽어짐 → 과혼합. 스프레드형 말고 블록형 사용",c:"추정A"},
+ {n:"소보로 토핑",base:"중력분 = 100",it:"중력분 100, 설탕 60, 마가린 50[50-62], 땅콩버터 15[12-15], 계란 10, 물엿 10[6-10], 탈지분유 3, 베이킹파우더 2, 소금 1",pr:"유지·땅콩버터 풀기 → 설탕·물엿·소금 → 계란 → 가루는 자르듯 60%만 섞고 손으로 비벼 보슬하게",keep:"냉장 1주 · 냉동 1개월",f:"떡짐 → 과혼합 / 흘러내림 → 유지가 무름",c:"표준*"},
+ {n:"모카빵 비스킷 토핑",base:"박력분 = 100",it:"박력분 100, 버터 35[30-40], 설탕 45[40-50], 계란 22[20-25], 우유 12, 베이킹파우더 1.5, 인스턴트커피 1.5, 소금 0.5",pr:"크림법 → 냉장 휴지 → 0.3~0.4cm로 밀어 덮기",keep:"냉장 3일",f:"빵이 덜 익음 → 너무 두꺼움 / 흘러내림 → 너무 무름",c:"추정B"},
+ {n:"아몬드 크림",base:"버터 = 100",it:"버터 100, 설탕 100, 계란 100, 아몬드파우더 100, 럼 5",pr:"크림법, 공기를 많이 넣지 않기",keep:"냉장 3~5일 · 냉동 1개월",f:"기름 분리 → 재료 온도 불일치 / 부풀었다 꺼짐 → 공기 과다",c:"추정A"},
+ {n:"프랑지판",base:"아몬드 크림 = 100",it:"아몬드 크림 100, 커스터드 50",pr:"같은 온도로 맞춰 섞기(갈레트 데 루아용)",keep:"냉장 2일",f:"커스터드 때문에 보관이 짧아져요",c:"추정A"},
+ {n:"팥앙금",base:"삶은 팥 = 100",it:"삶은 팥 100, 설탕 50[40-60], 물엿 7[5-10], 소금 0.4[0.3-0.5]",pr:"마지막에 물엿 → 주걱 자국이 천천히 메워질 때까지 졸이기. 저당은 설탕 30~40",keep:"냉장 5~7일 · 냉동 3개월",f:"빵이 터짐 → 앙금이 질음 / 퍽퍽 → 너무 졸임",c:"추정B"},
+ {n:"고구마·단호박 필링",base:"찐 퓨레 = 100",it:"고구마 퓨레 100, 버터 10, 설탕 15[10-20], 생크림 15[10-20]",pr:"수분을 날리며 볶아 되기 맞추기",keep:"냉장 3일",f:"너무 달거나 싱거움 → 퓨레마다 당도가 달라 맛보고 조정",c:"추정B"},
+ {n:"소금빵 충전 버터",base:"버터 = 100",it:"버터 100, 소금 1.7[1.5-2]",pr:"가염버터를 쓰거나 무염에 소금 · 8~15g 막대로 냉동",keep:"냉동 1개월",f:"2차 때 샘 → 실온 버터 사용",c:"추정A"},
+ {n:"시나몬 필링",base:"황설탕 = 100",it:"황설탕 100, 버터 50[40-60], 시나몬 10[8-12], 박력분 5",pr:"실온 버터에 섞어 바르는 페이스트로",keep:"냉장 2주",f:"흘러내려 바닥이 탐 → 녹인 버터 사용",c:"추정A"},
+ {n:"레몬 커드",base:"레몬즙 = 100",it:"레몬즙 100, 설탕 100, 계란 100, 버터 80[60-100]",pr:"중탕으로 저어 80~82℃에서 걸쭉해지면 체에 거르고 버터",keep:"냉장 1~2주",f:"금속 맛 → 알루미늄 냄비 / 알갱이 → 과열",c:"추정A"},
+ {n:"잼·콩포트",base:"과일 = 100",it:"과일 100, 설탕 80[60-100], 레몬즙 3",pr:"105℃ 근처 또는 찬 접시 테스트(당도 60~65 Brix). 콩포트는 설탕 20~40",keep:"잼 밀봉 수개월 · 콩포트 냉장 1주",f:"안 굳음 → 펙틴·산 부족 / 곰팡이 → 저당 잼은 냉장",c:"추정B"},
+ {n:"글레이즈",base:"슈거파우더 = 100",it:"슈거파우더 100, 우유 20[15-25]",pr:"액체로 1%씩 되기 조정",keep:"실온 당일",f:"스며듦 → 너무 묽음 / 갈라짐 → 너무 됨",c:"추정A"},
+ {n:"퐁당",base:"설탕 = 100",it:"설탕 100, 물 30, 물엿 15[10-20]",pr:"115~118℃로 끓여 식힌 뒤 교반 · 시판 퐁당은 35~37℃로 데워 사용",keep:"실온 밀봉 수개월",f:"무광으로 굳음 → 40℃ 넘게 데움",c:"추정B"},
+ {n:"케이크 시럽",base:"물 = 100",it:"물 100, 설탕 75[50-100], 리큐르 5",pr:"끓여 식혀 시트에 바르기",keep:"냉장 2주",f:"시트가 무너짐 → 너무 많이 바름",c:"추정B"},
+ {n:"코팅 초콜릿(템퍼링)",base:"커버추어 = 100",it:"다크초콜릿 100",pr:"다크: 45~50℃로 녹임 → 27~28℃로 내림 → 31~32℃로 올려 사용. 커버추어는 카카오버터 31% 이상",keep:"실온 18℃",f:"하얀 블룸 → 템퍼링 실패나 습기",c:"추정B"}
+];
+var AVG_SRC=[["한국신용데이터 베이커리 트렌드(2025)","https://www.senmoney.co.kr/news/articleView.html?idxno=28690"],["한국금융신문 프랜차이즈 톱10(2024.7)","https://www.fntimes.com/html/view.php?ud=202407140802304394dd55077bc2_18"],["큐넷 제빵기능사 공개문제(2023)","https://www.q-net.or.kr/cst006.do?id=cst00602&gSite=Q&gId=&brdId=Q006&code=1204&artlSeq=5211253"],["Baker percentage (Wikipedia)","https://en.wikipedia.org/wiki/Baker_percentage"],["Hamelman 풀리시 바게트 각색","https://dawghousebakery.com/2021/02/27/jeffrey-hamelmans-poolish-baguette-adapted/"],["America's Test Kitchen 커스터드","https://www.americastestkitchen.com/recipes/5757-pastry-cream"],["가나슈 비율 가이드","https://bittersweetindy.com/chocolate-ganache-ratio-guide/"],["바스크 치즈케이크(Wikipedia)","https://en.wikipedia.org/wiki/Basque_cheesecake"]];
+function avgParse(txt){return String(txt).split(/\s*,\s*/).map(function(p){var m=p.match(/^(.+?)\s+([\d.]+)(?:\[([\d.]+)-([\d.]+)\])?$/);return m?{n:m[1],pct:+m[2],lo:m[3]?+m[3]:null,hi:m[4]?+m[4]:null}:null;}).filter(Boolean);}
+function avgFind(q){q=String(q||"").replace(/\s/g,"");if(!q)return null;var all=AVG.concat(FILL),i,k;for(i=0;i<all.length;i++)if(all[i].n.replace(/\s/g,"")===q)return all[i];for(i=0;i<all.length;i++){k=all[i].n.replace(/\s/g,"");if(k.indexOf(q)>=0||q.indexOf(k.split(/[(·]/)[0])>=0)return all[i];}return null;}
+function avgMix(r){return avgParse(r.it).map(function(x){return x.n+" "+x.pct+(x.lo!==null?" ("+x.lo+"~"+x.hi+")":"");}).join(", ");}
+function avgForAI(r){var o={name:r.n,ingredients_pct_avg_and_range:avgMix(r),confidence:r.c,method:r.m||"",process:r.pr};if(r.base)o.basis=r.base;else if(r.cat)o.basis="밀가루 합계 100 (베이커스 퍼센트)";if(r.cat)o.category=r.cat;if(r.o)o.origin=r.o;if(r.pop)o.why_popular=r.pop;if(r.ex)o.explain=r.ex;if(r.f)o.common_failures=r.f;if(r.keep)o.storage=r.keep;if(r.sc)o.sources_compared=r.sc;return o;}
+function avgHasFlour(r){return avgParse(r.it).some(function(x){return info(x.n).r==="flour";});}
+function avgCard(r,i,kind){var items=avgParse(r.it),h='<details class="lib avg"><summary><b>'+esc(r.n)+'</b> <span class="tag '+(r.c==="추정B"?"v0":"v1")+'">'+esc(r.c)+'</span> <small>'+esc(r.cat?r.o:r.base)+'</small></summary>';
+  h+='<div class="meta">'+esc([r.o,r.m,r.base||(kind==="b"?"밀가루 100 기준":"")].filter(Boolean).join(" · "))+'</div>';
+  if(r.pop)h+='<div class="meta">많이 팔리는 이유: '+esc(r.pop)+'</div>';
+  h+='<table class="avgt"><tr><th>재료</th><th>평균</th><th>범위</th></tr>'+items.map(function(x){return'<tr><td>'+esc(x.n)+'</td><td class="rm">'+x.pct+'%</td><td class="rm">'+(x.lo!==null?x.lo+'~'+x.hi+'%':'-')+'</td></tr>';}).join("")+'</table>';
+  h+='<div class="meta"><b>공정</b> '+esc(r.pr)+'</div>';
+  if(r.keep)h+='<div class="meta"><b>보관</b> '+esc(r.keep)+'</div>';
+  if(r.ex)h+='<div class="meta"><b>설명</b> '+esc(r.ex)+'</div>';
+  h+='<div class="meta"><b>실패하면</b> '+esc(r.f)+'</div>';
+  if(r.c==="추정B")h+='<div class="meta warnc">출처가 적은 배합이에요. 한 번 테스트로 구워보고 조정하세요.</div>';
+  if(r.c==="표준*")h+='<div class="meta">제과·제빵기능사 실기 배합 기준이에요(큐넷 원문 대조 권장).</div>';
+  h+='<div class="row">';
+  if(kind==="b"&&!r.base&&avgHasFlour(r))h+='<button class="soft sm" data-acmp="'+i+'">지금 배합과 비교</button><button class="soft sm" data-aload="'+i+'">배합표로 불러오기</button>';
+  h+='<button class="soft sm" data-aask="'+kind+i+'">비서에게 묻기</button></div><div class="cmp" id="ac'+i+'" hidden></div></details>';return h;}
+function renderAvg(){var mode=G.avgMode||"b",cat=$("avgCat").value,q=$("avgQ").value.trim().replace(/\s/g,""),h="",n=0;
+  $("avgCat").hidden=mode!=="b";
+  [].forEach.call(document.querySelectorAll("[data-amode]"),function(b){b.classList.toggle("on",b.getAttribute("data-amode")===mode);});
+  var src=mode==="b"?AVG:FILL,nameHit=q&&src.some(function(r){return r.n.replace(/\s/g,"").indexOf(q)>=0;});
+  src.forEach(function(r,i){if(mode==="b"&&cat&&r.cat!==cat)return;if(q&&((nameHit?r.n:r.n+(r.o||"")+(r.cat||"")+r.it+(r.pop||"")).replace(/\s/g,"").indexOf(q)<0))return;n++;h+=avgCard(r,i,mode);});
+  $("avgList").innerHTML=(n?'<p class="note">'+n+'개</p>':'')+(h||'<p class="note">조건에 맞는 배합이 없어요.</p>');}
+function avgCompare(r){var cur={},names={},L=[],items=avgParse(r.it),fl=0;S.items.forEach(function(x){cur[x.n]=(cur[x.n]||0)+x.pct;});
+  items.forEach(function(x){var a=r1(cur[x.n]||0);names[x.n]=1;if(x.lo!==null&&(a<x.lo||a>x.hi))L.push(x.n+": 지금 "+a+"% → 보통 "+x.lo+"~"+x.hi+"% 범위 밖 ("+(a<x.lo?"적어요":"많아요")+")");else if(Math.abs(a-x.pct)>=.5)L.push(x.n+": 지금 "+a+"% / 평균 "+x.pct+"%");});
+  S.items.forEach(function(x){if(!names[x.n])L.push(x.n+": 평균 배합에는 없는 재료 ("+r1(x.pct)+"%)");});
+  return L.length?L.join("\n"):"평균 배합과 거의 같아요.";}
+
+// ---------- 비서 두뇌: 날씨·요일 학습 예측, 오늘 브리핑, 앱 전체 검색, 음성 ----------
+var WX=["맑음","흐림","비","눈","폭염","한파"];
+var CITY={"서울":[37.57,126.98],"인천":[37.46,126.71],"수원":[37.26,127.03],"춘천":[37.88,127.73],"강릉":[37.75,128.88],"대전":[36.35,127.38],"세종":[36.48,127.29],"청주":[36.64,127.49],"전주":[35.82,127.15],"광주":[35.16,126.85],"대구":[35.87,128.6],"부산":[35.18,129.08],"울산":[35.54,129.31],"창원":[35.23,128.68],"포항":[36.02,129.34],"안동":[36.57,128.73],"목포":[34.81,126.39],"여수":[34.76,127.66],"제주":[33.5,126.53]};
+var HOLI={"2026-01-01":"신정","2026-02-16":"설 연휴","2026-02-17":"설날","2026-02-18":"설 연휴","2026-03-01":"삼일절","2026-03-02":"대체공휴일","2026-05-05":"어린이날","2026-05-24":"부처님오신날","2026-05-25":"대체공휴일","2026-06-03":"지방선거","2026-06-06":"현충일","2026-08-15":"광복절","2026-08-17":"대체공휴일","2026-09-24":"추석 연휴","2026-09-25":"추석","2026-09-26":"추석 연휴","2026-10-03":"개천절","2026-10-05":"대체공휴일","2026-10-09":"한글날","2026-12-25":"성탄절","2027-01-01":"신정","2027-02-06":"설 연휴","2027-02-07":"설날","2027-02-08":"설 연휴","2027-02-09":"대체공휴일","2027-03-01":"삼일절","2027-05-05":"어린이날","2027-05-13":"부처님오신날","2027-06-06":"현충일","2027-08-15":"광복절","2027-08-16":"대체공휴일","2027-09-14":"추석 연휴","2027-09-15":"추석","2027-09-16":"추석 연휴","2027-10-03":"개천절","2027-10-04":"대체공휴일","2027-10-09":"한글날","2027-10-11":"대체공휴일","2027-12-25":"성탄절","2026-02-14":"밸런타인데이","2026-03-14":"화이트데이","2026-05-08":"어버이날","2026-11-11":"빼빼로데이","2026-12-24":"크리스마스이브","2027-02-14":"밸런타인데이","2027-03-14":"화이트데이","2027-05-08":"어버이날","2027-11-11":"빼빼로데이","2027-12-24":"크리스마스이브"};
+// 정부 지원 (2026.10 확인, 2027 예산안 기준 — 확정 공고는 12월 말 통합공고에서 다시 확인)
+var GRANTS=[
+ {n:"모두의 창업 (예비창업패키지 통합)",who:"예비창업자·업력 7년 이내(다른 업종)",amt:"1라운드 활동비 200만→2027년 500만 원, 단계별 사업화 최대 3,000만 원, 최종 상금 최대 5억 원",when:"2027년 상반기 1차 예상(2026년은 1차·2차 8~9월)",fit:"가장 먼저. 기술트랙(AI 앱) 또는 로컬트랙(지역 재료 베이커리)",where:"modoo.or.kr",s:"https://www.mt.co.kr/future/2026/09/01/2026083117051535539",due:"2027-03-15"},
+ {n:"농식품 벤처육성 지원사업",who:"농식품·농산업 기술 예비창업자(1년 이내 창업)·창업기업",amt:"사업화 자금(예비 기준 수천만 원, 공고 확인)",when:"매년 1~2월 모집(2026년 1.21~2.23)",fit:"지역 농산물 R&D 베이커리 + AI라 잘 맞음",where:"a-startups.or.kr (한국농업기술진흥원)",s:"https://www.venturesquare.net/announcement/1035139",due:"2027-01-20"},
+ {n:"지역창업패키지 (2027 신설안)",who:"창업도시에 있거나 이전하는 기업",amt:"최대 5억 원 사업화 + 이전 비용",when:"2027년 공고 예정",fit:"지방에서 창업하면 검토",where:"K-Startup",s:"https://www.issueon.co.kr/news/articleView.html?idxno=13898",due:""},
+ {n:"초기창업패키지",who:"업력 3년 이내",amt:"사업화 자금(평균 수천만 원)",when:"매년 2~3월",fit:"사업자 등록 후 다음 단계",where:"k-startup.go.kr",s:"https://www.mt.co.kr/future/2026/09/01/2026083117051535539",due:""},
+ {n:"창업성장기술개발 디딤돌",who:"업력 7년 이하, 매출 20억 미만, 중기부 R&D 첫 수행",amt:"과제당 최대 약 1.2억 원(정부 약 75%), 1년",when:"상반기 공고",fit:"AI 생산 예측·배합 예측 기술 개발 과제로",where:"smtech.go.kr",s:"https://clobe.ai/blog/didimdol-rnd-program-guide-2026",due:""},
+ {n:"혁신 소상공인 창업지원 (구 신사업창업사관학교)",who:"예비 소상공인 창업자",amt:"교육·점포 체험·멘토링 + 사업화 자금 연계",when:"1~2월",fit:"매장 베이커리를 함께 연다면",where:"sbiz24.kr",s:"https://tossplace.com/story/2026support",due:"2027-01-31"},
+ {n:"스마트상점 기술보급·디지털 바우처",who:"개업한 소상공인",amt:"기기·소프트웨어 도입비 50~70%(최대 1,000만 원), SaaS형 최대 300만 원",when:"3월 전후",fit:"매장은 도입, 앱은 '공급기업' 등록을 목표로",where:"sbiz.or.kr/smst",s:"https://studygov.kr/blog/0092-small-business-digital-transformation/",due:""},
+ {n:"소상공인 정책자금",who:"소상공인(청년고용연계는 만 39세 이하)",amt:"연 7,000만 원 한도 대출(정책금리)",when:"연중(예산 소진 시 마감)",fit:"매장 오픈 자금",where:"ols.semas.or.kr",s:"https://tossplace.com/story/2026support_funds",due:""},
+ {n:"소상공인 고용보험료·경영안정 바우처",who:"소상공인(바우처는 연매출 1억 400만 원 미만)",amt:"고용보험료 50~80% 최대 5년 / 공과금 바우처",when:"1~2월",fit:"개업 후 매년",where:"sbiz24.kr",s:"https://tossplace.com/story/2026support",due:""}
+];
+var BR={wxCache:null};
+function jo(w,a,b){var c=String(w).charCodeAt(String(w).length-1);return w+((c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28)?a:b);}
+var WXDAY={"맑음":"맑은 날","흐림":"흐린 날","비":"비 오는 날","눈":"눈 오는 날","폭염":"폭염인 날","한파":"한파인 날"};
+function sDay(d){return new Date(d+"T12:00:00").getDay();}
+function baseFrom(hist,wd){var same=hist.filter(function(x){return sDay(x.d)===wd;}).slice(-4),b=same.length?same:hist.slice(-7);if(!b.length)return null;return{v:b.reduce(function(a,x){return a+x.sold;},0)/b.length,n:b.length,same:same.length,soldOut:b.filter(function(x){return x.sold>=x.made;}).length,waste:salesAgg(b).waste};}
+// 기록을 날짜순으로 한 번 훑으며 학습: 그날 이전 기록만 써서 예측 → 오차 측정 → 날씨·행사 영향 갱신
+function learn(){var l=salesAll(),hist={},W={},E={s:0,n:0},errs=[];
+  l.forEach(function(x){var h=hist[x.m]||(hist[x.m]=[]);if(h.length>=3){var b=baseFrom(h,sDay(x.d));if(b&&b.v>0){var f=fac(W,E,x.w,x.ev),pred=b.v*f;if(x.sold<x.made)errs.push({d:x.d,e:Math.min(1,Math.abs(pred-x.sold)/Math.max(x.sold,1))});
+      var ratio=x.sold/b.v;if(x.w){var k=W[x.w]||(W[x.w]={s:0,n:0});k.s+=ratio;k.n++;}if(x.ev){E.s+=ratio;E.n++;}}}h.push(x);});
+  var acc=null,trend=null;if(errs.length>=5){var all=errs.map(function(e){return e.e;}),mean=function(a){return a.reduce(function(s,v){return s+v;},0)/a.length;};acc=Math.round((1-mean(all.slice(-14)))*100);if(errs.length>=20)trend=Math.round((mean(all.slice(0,10))-mean(all.slice(-10)))*100);}
+  return{W:W,E:E,acc:acc,trend:trend,n:errs.length,hist:hist};}
+function shrink(o){return o&&o.n?(o.s+3)/(o.n+3):1;}
+function fac(W,E,w,ev){return(w?shrink(W[w]):1)*(ev?shrink(E):1);}
+function recommend(opt){opt=opt||{};var L=learn(),day=opt.day||addDays(today(),1),wd=sDay(day),w=opt.w!=null?opt.w:(G.fcWx||""),ev=opt.ev!=null?opt.ev:!!(G.fcEv||HOLI[day]),out=[];
+  Object.keys(L.hist).forEach(function(m){var b=baseFrom(L.hist[m],wd);if(!b)return;var f=fac(L.W,L.E,w,ev),buf=b.soldOut>=b.n/2?1.15:(b.waste>20?1:1.08),rec=Math.max(1,Math.ceil(b.v*f*buf));
+    var why=(b.same?"지난 "+b.same+"번 "+dayName(day)+"요일":"최근 "+b.n+"번")+" 평균 "+r1(b.v)+"개";if(Math.abs(f-1)>=.03)why+=" · "+(w?w:"")+(ev?(w?"·":"")+"행사일":"")+" 영향 "+(f>1?"+":"")+Math.round((f-1)*100)+"%";why+=b.soldOut>=b.n/2?" · 다 팔린 날이 많아 15% 더":b.waste>20?" · 폐기가 많아 여유 없이":" · 여유 8%";
+    out.push({m:m,rec:rec,why:why});});
+  return{day:day,w:w,ev:ev,holi:HOLI[day]||"",list:out.sort(function(a,b){return b.rec-a.rec;}),L:L};}
+function learnedText(L){var t=[];Object.keys(L.W).forEach(function(w){var o=L.W[w];if(o.n>=3){var f=shrink(o);if(Math.abs(f-1)>=.08)t.push((WXDAY[w]||w)+"엔 "+(f>1?Math.round((f-1)*100)+"% 더":Math.round((1-f)*100)+"% 덜")+" 팔려요(기록 "+o.n+"건)");}});
+  if(L.E.n>=3){var f=shrink(L.E);if(Math.abs(f-1)>=.08)t.push("공휴일·행사일엔 "+(f>1?Math.round((f-1)*100)+"% 더":Math.round((1-f)*100)+"% 덜")+" 팔려요(기록 "+L.E.n+"건)");}return t;}
+function accText(L){if(L.acc==null)return"판매 기록이 더 쌓이면(메뉴별 4일 이상) 예측 정확도를 스스로 채점해요.";return"최근 예측 정확도 약 "+L.acc+"% (지난 기록으로 스스로 채점"+(L.trend!=null&&L.trend>0?", 처음보다 오차 "+L.trend+"%p 줄었어요":"")+")";}
+function wxFromCode(c,tmax){if(tmax>=31)return"폭염";if(tmax<=-5)return"한파";if(c>=71&&c<=77||c===85||c===86)return"눈";if(c>=51&&c<=67||c>=80&&c<=82||c>=95)return"비";if(c>=2)return"흐림";return"맑음";}
+function fetchWx(){var c=CITY[G.city||"서울"];if(!c||!window.fetch)return Promise.reject();var ctl=window.AbortController?new AbortController():null;setTimeout(function(){if(ctl)ctl.abort();},6000);
+  return fetch("https://api.open-meteo.com/v1/forecast?latitude="+c[0]+"&longitude="+c[1]+"&daily=weather_code,temperature_2m_max,precipitation_probability_max&timezone=Asia%2FSeoul&forecast_days=3",ctl?{signal:ctl.signal}:{}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(j){var o={};j.daily.time.forEach(function(d,i){o[d]={w:wxFromCode(j.daily.weather_code[i],j.daily.temperature_2m_max[i]),t:Math.round(j.daily.temperature_2m_max[i]),p:j.daily.precipitation_probability_max?j.daily.precipitation_probability_max[i]:null};});BR.wxCache={city:G.city||"서울",at:Date.now(),days:o};return o;});}
+function autoWx(cb){if(BR.wxCache&&BR.wxCache.city===(G.city||"서울")&&Date.now()-BR.wxCache.at<3*36e5){cb&&cb(true);return;}fetchWx().then(function(o){var tm=addDays(today(),1);if(o[tm]&&!G.fcWxManual){G.fcWx=o[tm].w;save();}cb&&cb(true);},function(){cb&&cb(false);});}
+function wxLine(day){var o=BR.wxCache&&BR.wxCache.days[day];return o?(G.city||"서울")+" "+o.w+" "+o.t+"℃"+(o.p!=null?" · 강수확률 "+o.p+"%":""):"";}
+// 오늘 브리핑: 비서가 먼저 알려주는 것들
+function dayBrief(){var t=today(),hr=new Date().getHours(),l=salesAll(),R=recommend(),L=R.L,out=[];
+  out.push((hr<11?"좋은 아침이에요":hr<17?"안녕하세요":"오늘도 수고 많으셨어요")+". "+t.slice(5).replace("-","월 ")+"일 "+dayName(t)+"요일"+(HOLI[t]?" ("+HOLI[t]+")":"")+"이에요.");
+  if(R.list.length){var top=R.list.slice(0,4).map(function(x){return x.m+" "+x.rec+"개";}).join(", ");out.push("내일("+dayName(R.day)+(R.w?", "+R.w:"")+(R.holi?", "+R.holi:"")+")은 "+top+" 만드는 걸 추천해요.");}
+  else out.push("판매 기록을 일주일만 적으면 내일 몇 개 만들지 요일·날씨에 맞춰 추천해 드릴게요.");
+  var y=addDays(t,-1);if(l.length&&!l.some(function(x){return x.d===y;})&&l.some(function(x){return x.d>addDays(t,-14);}))out.push("어제 판매 기록이 비어 있어요. 기록이 빠지면 예측이 흔들려요.");
+  var w7=l.filter(function(x){return x.d>addDays(t,-7);});if(w7.length){var a=salesAgg(w7);if(a.waste>15){var by={};w7.forEach(function(x){var o=by[x.m]||(by[x.m]={made:0,sold:0});o.made+=x.made;o.sold+=x.sold;});var worst=Object.keys(by).sort(function(p,q){return(by[q].made-by[q].sold)-(by[p].made-by[p].sold);})[0];out.push("최근 7일 폐기율이 "+r1(a.waste)+"%예요. "+jo(worst,"이","가")+" 가장 많이 남았어요.");}
+    else out.push("최근 7일 매출 "+won(a.rev)+", 남은 돈 "+won(a.profit)+"(고정비 전), 폐기율 "+r1(a.waste)+"%.");}
+  try{var low=menuRows().filter(function(r){return r.price>0&&r.margin<15;});if(low.length)out.push(jo(low.map(function(r){return r.n;}).slice(0,3).join(", "),"은","는")+" 마진이 15% 아래예요. 가격이나 배합을 다시 보세요.");}catch(e){}
+  learnedText(L).slice(0,2).forEach(function(s){out.push("배운 것: "+s+".");});
+  if(L.acc!=null)out.push(accText(L)+".");
+  var soon=GRANTS.filter(function(g){return g.due&&g.due>=t&&g.due<=addDays(t,120);}).sort(function(a,b){return a.due<b.due?-1:1;})[0];if(soon)out.push("지원사업: "+soon.n+" — "+soon.when+". 지금부터 준비하면 좋아요.");
+  return out;}
+function renderBrief(){var el=$("todayBrief");if(!el)return;var b=dayBrief();el.innerHTML='<div class="brief-h"><h3>오늘 브리핑</h3><button class="soft sm" id="briefSpeak">읽어주기</button><button class="soft sm" id="voiceHome">말로 묻기</button></div><ul>'+b.map(function(s){return"<li>"+esc(s)+"</li>";}).join("")+"</ul>";
+  $("briefSpeak").onclick=function(){speak(b.join(" "),true);};$("voiceHome").onclick=function(){openBot();listen();};}
+// 앱 전체 검색 (비서의 기억)
+function searchAll(q){q=String(q||"").replace(/\s/g,"");var hit=[],has=function(s){return String(s).replace(/\s/g,"").indexOf(q)>=0;};if(!q)return hit;
+  AVG.forEach(function(r){if(has(r.n)||has(r.cat)||has(r.it))hit.push({kind:"평균 배합",name:r.n,detail:avgMix(r),note:r.ex});});
+  FILL.forEach(function(r){if(has(r.n)||has(r.it))hit.push({kind:"속재료·크림",name:r.n,detail:avgMix(r),note:r.pr});});
+  REF.forEach(function(r){if(has(r.n)||has(r.c)||has(r.d))hit.push({kind:"비용 정보",name:r.n,detail:r.v,note:r.d});});
+  Object.keys(D).forEach(function(n){if(has(n))hit.push({kind:"재료",name:n,detail:(D[n].p?won(D[n].p)+"/"+D[n].a+D[n].u:""),note:D[n].d});});
+  lsGet("lab_recipes",[]).forEach(function(r){if(r&&has(r.name))hit.push({kind:"내 레시피",name:r.name,detail:r.items.map(function(x){return x.n+" "+r1(x.pct);}).join(", ")});});
+  lsGet("lab_logs",[]).forEach(function(x){if(has(x.recipe)||has(x.note||""))hit.push({kind:"실험 기록",name:x.date+" "+x.recipe,detail:"평가 "+x.rate,note:x.note});});
+  allRefs().forEach(function(r){if(has(r.n))hit.push({kind:"참고 레시피",name:r.n,detail:mixText(r.items)});});
+  GRANTS.forEach(function(g){if(has(g.n)||has(g.fit)||has(g.who))hit.push({kind:"정부 지원",name:g.n,detail:g.amt,note:g.when+" · "+g.where});});
+  return hit.slice(0,25);}
+// AI 없이도 답하는 이해 엔진
+function brainLocal(t){var s=String(t).replace(/\s/g,""),R,L;
+  if(/브리핑|오늘어때|요약해|뭐해야|할일/.test(s))return dayBrief().join("\n");
+  if(/(내일|모레|오늘).*(몇개|얼마나|생산|만들)|예측|추천생산/.test(s)){R=recommend();if(!R.list.length)return"판매 기록이 아직 없어서 예측할 수 없어요. '판매' 탭에 만든 개수와 판 개수를 일주일만 적어 주세요.";
+    return R.day+" ("+dayName(R.day)+(R.w?", "+R.w:"")+(R.holi?", "+R.holi:"")+") 추천 생산량이에요.\n"+R.list.map(function(x){return"- "+x.m+" "+x.rec+"개 ("+x.why+")";}).join("\n")+"\n\n"+accText(R.L)+(learnedText(R.L).length?"\n배운 것: "+learnedText(R.L).join(", "):"");}
+  if(/매출|얼마벌|남았|이익|폐기율|장사/.test(s)){var l=salesAll();if(!l.length)return"아직 판매 기록이 없어요.";var t0=today(),pick=/오늘/.test(s)?[t0,t0,"오늘"]:/이번달|한달|월/.test(s)?[t0.slice(0,8)+"01",t0,"이번 달"]:[addDays(t0,-6),t0,"최근 7일"],a=salesAgg(l.filter(function(x){return x.d>=pick[0]&&x.d<=pick[1];}));
+    return pick[2]+" 매출 "+won(a.rev)+", 남은 돈 "+won(a.profit)+" (고정비 전), 만든 "+a.made+"개 중 "+a.sold+"개 판매, 폐기율 "+r1(a.waste)+"%.";}
+  if(/지원사업|지원금|정부지원|창업지원|정책자금|바우처/.test(s))return"받을 수 있는 지원이에요 (2026.10 확인, 공고에서 다시 확인하세요)\n"+GRANTS.map(function(g){return"- "+g.n+": "+g.amt+" · "+g.when+" · "+g.where;}).join("\n");
+  if(/원가|마진|얼마남|단가/.test(s)){var rs=lsGet("lab_recipes",[]),r=null;rs.forEach(function(x){if(x&&s.indexOf(x.name.replace(/\s/g,""))>=0)r=x;});var c=r?costFor(r):costFor(JSON.parse(JSON.stringify(S))),nm=r?r.name:S.name,ak=avgKey(t),pre="";
+    if(!r&&ak&&S.name.replace(/\s/g,"").indexOf(ak.split(/[(·]/)[0].replace(/\s/g,""))<0)pre="'"+ak+"'은 아직 저장한 레시피가 아니에요. 레시피 탭의 평균 기본 배합에서 불러와 저장하면 그 메뉴 원가를 계산해 드려요. 지금 배합표 기준으로는:\n";
+    return pre+nm+": 개당 원가 "+won(c.total)+", 판매가 "+won(c.price)+", 1개 팔면 "+won(c.unit)+" 남아요 (마진 "+r1(c.margin)+"%, 식재료 원가율 "+r1(c.food)+"%).";}
+  if(/수수료|세금|부가세|포장|택배|배달|카드/.test(s)){var hit=REF.filter(function(r){return/수수료/.test(s)&&/수수료/.test(r.c+r.n)||/세금|부가세/.test(s)&&/세|부가/.test(r.c+r.n)||/포장/.test(s)&&/포장/.test(r.c+r.n)||/택배|배송/.test(s)&&/택배|배송/.test(r.c+r.n)||/배달/.test(s)&&/배달|배민|쿠팡|요기/.test(r.c+r.n)||/카드/.test(s)&&/카드/.test(r.c+r.n);});
+    if(hit.length)return"비용 정보 사전("+REFD+")이에요.\n"+hit.slice(0,10).map(function(r){return"- "+r.n+": "+r.v+(r.d?" ("+r.d+")":"");}).join("\n");}
+  var al=avgLocal(t);if(al)return al;
+  var ing=null;Object.keys(D).forEach(function(n){if(s.indexOf(n.replace(/\s/g,""))>=0&&(!ing||n.length>ing.length))ing=n;});if(ing&&/뭐|무엇|어떤|역할|특징|대신|넣으면/.test(s)){var d=D[ing];return ing+": "+d.d+(d.up?"\n늘리면: "+d.up:"")+(d.dn?"\n줄이면: "+d.dn:"")+(d.p?"\n앱 기준 가격: "+won(d.p)+" / "+d.a+d.u:"");}
+  if(/뭐할수|도움말|기능|할수있/.test(s))return"이런 걸 할 수 있어요.\n- \"오늘 브리핑\" 오늘 할 일과 내일 생산량\n- \"내일 몇 개 만들까\" 요일·날씨·행사 학습 예측\n- \"이번 주 매출\" \"폐기율\"\n- \"소금빵 배합\" \"커스터드 만드는 법\" 평균 배합 82종\n- \"배민 수수료\" \"부가세\" 비용 정보\n- \"정부 지원사업\"\n- 마이크 버튼으로 말로 묻고, 답을 읽어줘요.";
+  return"";}
+// 음성: 말로 묻기 / 읽어주기
+function speechOK(){return!!(window.SpeechRecognition||window.webkitSpeechRecognition);}
+function listen(){var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast("이 브라우저는 음성 입력을 지원하지 않아요. 키보드의 마이크 버튼을 써보세요.");$("msg").focus();return;}
+  try{var r=new SR();r.lang="ko-KR";r.interimResults=true;r.maxAlternatives=1;var fin="";$("mic").classList.add("on");$("msg").placeholder="듣고 있어요…";
+    r.onresult=function(e){var s="";for(var i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;$("msg").value=s;if(e.results[e.results.length-1].isFinal)fin=s;};
+    r.onerror=function(e){toast(e.error==="not-allowed"?"마이크 사용이 막혀 있어요. 브라우저 설정에서 허용해 주세요.":"잘 못 들었어요. 다시 눌러 말해 주세요.");};
+    r.onend=function(){$("mic").classList.remove("on");$("msg").placeholder="예: 내일 몇 개 만들까?";if(fin.trim()){G.ttsOnce=true;sendMsg(fin);}};r.start();}catch(e){toast("음성 입력을 시작하지 못했어요.");}}
+function speak(text,force){if(!window.speechSynthesis)return;if(!force&&!G.tts&&!G.ttsOnce)return;G.ttsOnce=false;try{speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(String(text).replace(/[-•*#]/g," ").slice(0,600));u.lang="ko-KR";u.rate=1.05;speechSynthesis.speak(u);}catch(e){}}
+function renderGrants(){var el=$("grantList");if(!el)return;var t=today();el.innerHTML=GRANTS.map(function(g){return'<div class="lib"><h4>'+esc(g.n)+(g.due&&g.due>=t&&g.due<=addDays(t,120)?' <span class="tag v0">곧 모집</span>':'')+'</h4><div class="meta">대상: '+esc(g.who)+'</div><div class="mix">'+esc(g.amt)+'</div><div class="meta">시기: '+esc(g.when)+' · 신청: '+esc(g.where)+'</div><div class="meta"><b>나에게</b> '+esc(g.fit)+'</div><div class="meta"><a href="'+esc(g.s)+'" target="_blank" rel="noopener">근거 자료</a></div></div>';}).join("");}
+
+// ---------- 반죽 온도 ----------
+function tempCalc(){var T=num(G.tTarget),R=num(G.tRoom),F=num(G.tFlour),Fr=num(G.tFric),tap=num(G.tTap);
+  var w=r1(T*3-(R+F+Fr)),c=calc(),wt=find("물"),wg=wt?c.fg*wt.pct/100:0,h;
+  h='<div class="result"><div><span>넣을 물 온도</span><b>'+w+'℃</b></div>';
+  if(wg>0&&w<tap){var ice=Math.max(0,wg*(tap-w)/(80+tap));h+='<div><span>얼음 (물 '+Math.round(wg)+'g 중)</span><b>'+Math.round(ice)+'g</b></div><div><span>수돗물</span><b>'+Math.round(wg-ice)+'g</b></div>';}
+  h+='</div>';if(w<0)h+='<div class="msg warn">물 온도가 0℃ 아래로 나와요. 밀가루를 냉장하거나 작업실 온도를 낮추세요.</div>';else if(w>40)h+='<div class="msg warn">물이 40℃를 넘으면 이스트가 상할 수 있어요. 밀가루나 작업실 온도를 올리세요.</div>';
+  $("tempOut").innerHTML=h;}
+
+// ---------- 라벨 ----------
+var ALG=[["밀",["강력분","중력분","박력분","통밀가루","우리밀가루","T65","T55","세몰리나","글루텐"]],["우유",["우유","생크림","버터밀크","버터","충전용 버터","탈지분유","크림치즈","연유","마스카포네"]],["알류(달걀)",["계란","노른자","흰자"]],["호두",["호두"]],["대두",[]],["땅콩",[]],["잣",[]]];
+function labelData(){var c=calc(),items=S.items.map(function(x){return{n:x.n,g:c.fg*x.pct/100};});
+  S.top.forEach(function(t){items.push({n:t.n,g:num(t.g)*num(S.pieces)});});
+  items.sort(function(a,b){return b.g-a.g;});
+  var names=items.map(function(x){return x.n;}),al=[];
+  ALG.forEach(function(a){if(a[1].some(function(n){return names.indexOf(n)>=0;}))al.push(a[0]);});
+  names.forEach(function(n){if(/초콜릿|쿠키|크림/.test(n)&&al.indexOf("우유")<0&&!D[n])al.push("우유(확인 필요)");});
+  if(names.indexOf("다크초콜릿")>=0){if(al.indexOf("우유")<0)al.push("우유(초콜릿 원료 확인)");al.push("대두(초콜릿 원료 확인)");}
+  var d=G.lbDate||new Date().toISOString().slice(0,10),exp=new Date(Date.parse(d)+num(G.lbDays)*864e5).toISOString().slice(0,10);
+  return{name:G.lbName||S.name,names:names,al:al,w:Math.round(num(S.weight)*(1-num(S.bakeLoss)/100)),date:d,exp:exp,keep:G.lbKeep,shop:G.lbShop,addr:G.lbAddr};}
+function labelText(L){return"제품명: "+L.name+"\n내용량: "+L.w+"g\n원재료명: "+L.names.join(", ")+"\n알레르기 유발물질: "+(L.al.length?L.al.join(", ")+" 함유":"해당 없음")+"\n제조일: "+L.date+"\n소비기한: "+L.exp+"까지\n보관방법: "+L.keep+(L.shop?"\n업소명: "+L.shop:"")+(L.addr?"\n소재지: "+L.addr:"");}
+function renderLabel(){var L=labelData();$("lbOut").innerHTML='<div class="label-card"><b>제품명</b> '+esc(L.name)+'<br><b>내용량</b> '+L.w+'g<br><b>원재료명</b> '+esc(L.names.join(", "))+'<br><b>알레르기</b> <span class="allergy">'+esc(L.al.length?L.al.join(", ")+" 함유":"해당 없음")+'</span><br><b>제조일</b> '+L.date+' · <b>소비기한</b> '+L.exp+'까지<br><b>보관방법</b> '+esc(L.keep)+(L.shop?'<br><b>업소명</b> '+esc(L.shop):'')+(L.addr?'<br><b>소재지</b> '+esc(L.addr):'')+'</div>';}
+
+// ---------- 메뉴 손익 ----------
+function menuRows(){var list=lsGet("lab_recipes",[]),keep=S,rows=[];
+  list.forEach(function(r){if(!r||!r.items)return;S=r;if(!S.t)S.t={prep:15,shape:25,bake:10,pack:15};if(!S.e)S.e={kw:6,ov:40,kw2:.5,eq:20};if(!S.pack)S.pack=[];if(!S.top)S.top=[];if(S.price==null)S.price=(P[S.type]||{}).pr||5000;
+    var k=cost(),a=atPrice(k,num(S.price)),base=num(S.price)*(1-vatShare(G.vatMode));rows.push({n:r.name,cost:k.total,price:num(S.price),unit:a.unit,margin:a.margin,food:base>0?(k.ing+k.top)/base*100:0});});
+  S=keep;return rows.sort(function(a,b){return b.margin-a.margin;});}
+function renderMenu(){var rows=menuRows();
+  if(!rows.length){$("menuBody").innerHTML='<tr><td colspan="6" class="tip">레시피를 저장하면 여기에 메뉴별 손익이 나와요.</td></tr>';$("menuNote").innerHTML="";return;}
+  $("menuBody").innerHTML=rows.map(function(r,i){return'<tr class="'+(i===0&&rows.length>1?"best":(r.margin<num(G.target)?"low":""))+'"><td>'+esc(r.n)+'</td><td class="r mono">'+won(r.cost)+'</td><td class="r mono">'+won(r.price)+'</td><td class="r mono">'+won(r.unit)+'</td><td class="r mono">'+r1(r.margin)+'%</td><td class="r mono">'+r1(r.food)+'%</td></tr>';}).join("");
+  var low=rows.filter(function(r){return r.margin<num(G.target);});
+  $("menuNote").innerHTML='<p class="note">'+(rows.length>1?"가장 많이 남는 메뉴는 '"+esc(rows[0].n)+"'예요. ":"")+(low.length?"목표 마진("+num(G.target)+"%)보다 낮은 메뉴: "+low.map(function(r){return"'"+esc(r.n)+"'";}).join(", ")+". 가격이나 배합을 다시 보세요.":"모든 메뉴가 목표 마진을 넘어요.")+'</p>';}
+
+// ---------- 메뉴별 원가 (저장한 레시피 기준) ----------
+function recipeByName(n){var l=lsGet("lab_recipes",[]);for(var i=0;i<l.length;i++)if(l[i]&&l[i].name===n)return l[i];return null;}
+function costFor(r){var keep=S,out;S=r;if(!S.t)S.t={prep:15,shape:25,bake:10,pack:15};if(!S.e)S.e={kw:6,ov:40,kw2:.5,eq:20};if(!S.pack)S.pack=[];if(!S.top)S.top=[];if(S.price==null)S.price=(P[S.type]||{}).pr||5000;
+  try{var k=cost(),a=atPrice(k,num(S.price));out={price:num(S.price),net:a.net,made:k.made,total:k.total,unit:a.unit,margin:a.margin,food:num(S.price)>0?(k.ing+k.top)/(num(S.price)*(1-vatShare(G.vatMode)))*100:0};}finally{S=keep;}return out;}
+
+// ---------- 판매·생산 기록 ----------
+function salesAll(){return lsGet("lab_sales",[]);}
+function dayName(d){return["일","월","화","수","목","금","토"][new Date(d+"T12:00:00").getDay()];}
+function addDays(d,n){return new Date(Date.parse(d+"T12:00:00")+n*864e5).toISOString().slice(0,10);}
+function today(){var t=new Date();return new Date(t.getTime()-t.getTimezoneOffset()*6e4).toISOString().slice(0,10);}
+function menuNames(){var n=lsGet("lab_recipes",[]).map(function(r){return r.name;});if(n.indexOf(S.name)<0)n.unshift(S.name);return n;}
+function renderSalesMenu(){var cur=$("sMenu").value;$("sMenu").innerHTML=menuNames().map(function(n){return"<option>"+esc(n)+"</option>";}).join("");if(cur&&menuNames().indexOf(cur)>=0)$("sMenu").value=cur;}
+function addSale(){var d=$("sDate").value||today(),m=$("sMenu").value,made=Math.round(num($("sMade").value)),sold=Math.round(num($("sSold").value));
+  if(!m||made<=0){toast("메뉴와 만든 개수를 넣어주세요.");return;}if(sold>made){toast("판 개수가 만든 개수보다 많아요. 숫자를 확인하세요.");return;}
+  var r=recipeByName(m)||(m===S.name?JSON.parse(JSON.stringify(S)):null),c=r?costFor(r):{price:0,net:0,made:0};
+  var l=salesAll().filter(function(x){return!(x.d===d&&x.m===m);});l.push({d:d,m:m,made:made,sold:sold,price:Math.round(c.price),net:Math.round(c.net),vm:Math.round(c.made),w:$("sWx").value,ev:$("sEv").checked?1:0});
+  l.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0;});if(l.length>3000)l=l.slice(-3000);
+  if(lsSet("lab_sales",l)){$("sMade").value="";$("sSold").value="";renderSales();toast(m+" "+d+" 기록했어요.");}}
+function salesAgg(list){var o={rev:0,profit:0,made:0,sold:0};list.forEach(function(x){o.rev+=x.sold*x.price;o.profit+=x.sold*x.net-x.made*x.vm;o.made+=x.made;o.sold+=x.sold;});o.waste=o.made>0?(o.made-o.sold)/o.made*100:0;return o;}
+function renderSales(){if(!$("sBody"))return;renderSalesMenu();var l=salesAll(),t=today();
+  if(!$("sDate").value)$("sDate").value=t;
+  var last=l.length?l[l.length-1].d:t,w7=l.filter(function(x){return x.d>addDays(last,-7);}),mon=l.filter(function(x){return x.d.slice(0,7)===last.slice(0,7);}),a7=salesAgg(w7),am=salesAgg(mon);
+  $("sSummary").innerHTML=l.length?'<div class="result"><div><span>최근 7일 매출</span><b>'+won(a7.rev)+'</b></div><div><span>최근 7일 남은 돈 (고정비 전)</span><b>'+won(a7.profit)+'</b></div><div><span>최근 7일 폐기율</span><b>'+r1(a7.waste)+'%</b></div><div><span>'+last.slice(0,7)+' 남은 돈 − 월 고정비</span><b>'+won(am.profit-cost().fixedM)+'</b></div></div>'+(a7.waste>15?'<div class="msg warn">폐기율이 15%를 넘어요. 아래 추천 생산량을 참고해 만드는 양을 줄여보세요.</div>':''):'<p class="note">아직 기록이 없어요. 오늘 만든 개수와 판 개수를 적어보세요. 일주일만 적어도 추천이 나와요.</p>';
+  var R=recommend();$("sRec").innerHTML=R.list.length?'<p class="note">'+R.day+' ('+dayName(R.day)+(R.w?', '+R.w:'')+(R.holi?', '+R.holi:'')+') 기준이에요.</p><div class="recs">'+R.list.map(function(x){return'<div><span>'+esc(x.m)+'</span><b>'+x.rec+'개</b><span>'+esc(x.why)+'</span></div>';}).join("")+'</div>':'<p class="note">판매 기록이 쌓이면 메뉴별로 추천해요.</p>';
+  if($("sLearn")){var lt=learnedText(R.L);$("sLearn").textContent=accText(R.L)+(lt.length?" · 배운 것: "+lt.join(", "):"");}
+  $("sBody").innerHTML=l.slice(-30).reverse().map(function(x){var w=x.made>0?(x.made-x.sold)/x.made*100:0;return'<tr><td class="mono">'+x.d.slice(5)+' '+dayName(x.d)+'</td><td>'+esc(x.m)+'</td><td class="r mono">'+x.made+'</td><td class="r mono">'+x.sold+'</td><td class="r mono">'+r1(w)+'%</td><td class="r mono">'+won(x.sold*x.price)+'</td><td class="r mono">'+won(x.sold*x.net-x.made*x.vm)+'</td><td><button class="x" data-sdel="'+x.d+'|'+esc(x.m)+'" aria-label="기록 삭제">✕</button></td></tr>';}).join("")||'<tr><td colspan="8" class="tip">기록이 없어요.</td></tr>';
+  renderToday();}
+function renderToday(){var el=$("today");if(!el)return;var l=salesAll(),R=recommend(),t=today(),td=l.filter(function(x){return x.d===t;}),a=salesAgg(td);
+  var h='<h3>오늘 '+t.slice(5)+' ('+dayName(t)+')</h3>';
+  h+=td.length?'<div class="result"><div><span>오늘 매출</span><b>'+won(a.rev)+'</b></div><div><span>남은 돈 (고정비 전)</span><b>'+won(a.profit)+'</b></div><div><span>폐기율</span><b>'+r1(a.waste)+'%</b></div></div>':'<p class="note">오늘 판매를 아직 적지 않았어요.</p>';
+  if(R.list.length)h+='<p class="note">내일 추천: '+R.list.slice(0,4).map(function(x){return esc(x.m)+" "+x.rec+"개";}).join(" · ")+'</p>';
+  h+='<div class="row"><button class="sm" data-go="d11">판매 기록하기</button><button class="soft sm" data-go="photo">사진으로 빵 기록</button><button class="ais sm" data-go="bot">AI 비서에게 묻기</button></div>';
+  el.innerHTML=h;bindGo(el);renderBrief();}
+
+// ---------- 탭 ----------
+var TABS=[["home","홈",["dHome","d13"]],["recipe","레시피",["d1","d2","d12","d3","d10","d7"]],["cost","원가·가격",["d4","d8"]],["sales","판매",["d11","d9"]],["records","기록",["d6","d14"]]];
+function tabOf(id){for(var i=0;i<TABS.length;i++)if(TABS[i][2].indexOf(id)>=0)return TABS[i][0];return"home";}
+function showTab(t){G.tab=t;TABS.forEach(function(T){T[2].forEach(function(id){var el=$(id);if(el)el.hidden=T[0]!==t;});});
+  Array.prototype.forEach.call($("tabs").querySelectorAll("button"),function(b){b.setAttribute("aria-selected",b.dataset.tab===t?"true":"false");});
+  if(t==="sales"){renderSales();renderMenu();}if(t==="home")renderToday();save();}
+function goTo(g){if(g==="bot"){openBot();return;}var id=g==="price"?"d4":g==="photo"?"d6":g;showTab(tabOf(id));var el=$(id);if(el&&el.tagName==="DETAILS")el.open=true;
+  var tgt=g==="price"?$("price"):g==="photo"?$("photoStep"):el;if(tgt)setTimeout(function(){tgt.scrollIntoView({block:"start"});if(g==="price")$("price").focus({preventScroll:true});},30);}
+function bindGo(root){Array.prototype.forEach.call(root.querySelectorAll("[data-go]"),function(a){a.onclick=function(ev){ev.preventDefault();goTo(a.getAttribute("data-go"));};});}
+function setExpert(on){G.expert=!!on;document.body.classList.toggle("simple",!G.expert);$("expert").checked=G.expert;}
+function reloadState(){G=Object.assign({},GDEF,lsGet("lab_g",{}));prices=lsGet("lab_prices",{});var c=lsGet("lab_cur",null);if(c&&c.items&&c.t&&c.price!=null)S=c;chat=lsGet("lab_chat",[]);
+  $("preset").value=S.type;fillInputs();render();diagnose();renderSaved();renderLogs();renderRefs();renderMenu();renderSales();setExpert(G.expert);showTab(G.tab||"home");if(isPC)renderChat();onbShow();}
+function onbShow(){$("onb").hidden=!!G.onb;}
+function onbGo(){var p=$("onbPreset").value;snap();var k=S;S=newState(p);S.t=k.t;S.e.kw=k.e.kw;S.e.kw2=k.e.kw2;S.e.eq=k.e.eq;if(num($("onbPrice").value)>0)S.price=num($("onbPrice").value);
+  $("preset").value=p;$("qChannel").value=$("onbChannel").value;$("qAppWrap").hidden=$("qChannel").value!=="app";quickApply();
+  var kk=cost(),a=atPrice(kk,num(S.price)),rec=recPrice(kk);G.onb=true;save();
+  $("onbOut").innerHTML='<div class="msg '+(a.unit>=0?"ok":"bad")+'">'+esc(p)+' 1개 원가는 '+won(kk.total)+', '+won(num(S.price))+'에 팔면 1개당 '+(a.unit>=0?won(a.unit)+" 남아요 (마진 "+Math.round(a.margin)+"%).":won(-a.unit)+" 손해예요.")+' 목표 마진 '+G.target+'%를 맞추려면 '+(rec?won(rec):"-")+' 정도가 적당해요.</div><div class="row"><button class="sm" data-go="d4">원가 자세히 보기</button><button class="soft sm" data-go="d2">배합 고치기</button><button class="soft sm" id="onbClose">닫기</button></div><p class="note">재료값과 월세를 실제 금액으로 바꾸면 더 정확해져요. 레시피는 \'기록\' 탭에서 저장하세요.</p>';
+  bindGo($("onbOut"));$("onbClose").onclick=function(){$("onb").hidden=true;};}
+
+// ---------- 저장 ----------
+function lsGet(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
+var SYNC_KEYS=["lab_cur","lab_g","lab_prices","lab_recipes","lab_logs","lab_refs","lab_sales","lab_chat"];
+var SY={db:null,base:null,timers:{},busy:{},again:{},initDone:false};
+function tsGet(){try{return JSON.parse(localStorage.getItem("lab_ts")||"{}");}catch(e){return{};}}
+function markDirty(k){if(SYNC_KEYS.indexOf(k)<0||!SY.initDone)return;var t=tsGet();t[k]=Date.now();try{localStorage.setItem("lab_ts",JSON.stringify(t));}catch(e){}syncPush(k);}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));markDirty(k);return true;}catch(e){return false;}}
+function syncPush(k){if(!SY.db)return;clearTimeout(SY.timers[k]);SY.timers[k]=setTimeout(function(){pushNow(k);},1500);}
+function pushNow(k){if(!SY.db)return;if(SY.busy[k]){SY.again[k]=true;return;}SY.busy[k]=true;
+  var raw=localStorage.getItem(k)||"null",ts=tsGet()[k]||Date.now(),CH=180000,parts=[],i;for(i=0;i<raw.length;i+=CH)parts.push(raw.slice(i,i+CH));
+  var col=SY.db.collection(SY.base+"/kv"),main=col.doc(k);
+  main.get().then(function(old){var oldN=old.exists?(old.data().n||0):0,chain=Promise.resolve();
+    if(parts.length<=1)chain=chain.then(function(){return main.set({ts:ts,n:0,j:raw});});
+    else{parts.forEach(function(p,j){chain=chain.then(function(){return col.doc(k+"~"+j).set({j:p});});});chain=chain.then(function(){return main.set({ts:ts,n:parts.length});});}
+    for(var x=parts.length>1?parts.length:0;x<oldN;x++)(function(x){chain=chain.then(function(){return col.doc(k+"~"+x).delete();});})(x);
+    return chain;})
+  .then(function(){setSave("cloud");},function(e){setSave(e&&e.code==="quota_exceeded"?"full":"err");})
+  .then(function(){SY.busy[k]=false;if(SY.again[k]){SY.again[k]=false;pushNow(k);}});}
+function setSave(st){var el=$("saveState");if(!el)return;el.className="save-state"+(st==="cloud"?" cloud":"");
+  el.textContent={cloud:"계정에 저장됨 · 휴대폰·PC 같이 쓰기",local:"이 기기에만 저장 · 가끔 백업하세요",err:"계정 저장 실패 · 이 기기에는 저장됨",full:"계정 저장 공간이 가득 찼어요 · 오래된 사진 기록을 지우세요",load:"계정에서 불러오는 중"}[st]||"";}
+function syncStart(){
+  if(!(window.claude&&typeof window.claude.use==="function")){setSave("local");return;}
+  Promise.all([window.claude.use("db"),window.claude.use("user")]).then(function(r){var db=r[0],user=r[1];if(!db||!user){setSave("local");return null;}
+    return user.id().then(function(id){if(!id){setSave("local");return null;}SY.db=db;SY.base="data/users/"+id+"/app";setSave("load");
+      return db.collection(SY.base+"/kv").get().then(function(snap){var docs={};snap.docs.forEach(function(d){docs[d.id]=d.data();});
+        var lt=tsGet(),changed=false;
+        SYNC_KEYS.forEach(function(k){var m=docs[k];
+          if(m&&(m.ts||0)>(lt[k]||0)){var raw=m.n?Array.from({length:m.n},function(_,i){return(docs[k+"~"+i]||{}).j||"";}).join(""):m.j;
+            try{JSON.parse(raw);localStorage.setItem(k,raw);lt[k]=m.ts;changed=true;}catch(e){}}
+          else if(localStorage.getItem(k)!=null&&(!m||(lt[k]||0)>(m.ts||0))){if(!lt[k])lt[k]=Date.now();pushNow(k);}});
+        try{localStorage.setItem("lab_ts",JSON.stringify(lt));}catch(e){}
+        if(changed)reloadState();setSave("cloud");});});})
+  .catch(function(){setSave(SY.db?"err":"local");});
+}
+var $=function(id){return document.getElementById(id);};
+function num(v){var n=parseFloat(v);return isFinite(n)?n:0;}
+function r1(n){return Math.round(n*10)/10;}
+function won(n){return (n<0?"−":"")+Math.round(Math.abs(n)).toLocaleString("ko-KR")+"원";}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function toast(t){Array.prototype.forEach.call(document.querySelectorAll(".toast"),function(x){x.remove();});var m=document.createElement("div");m.className="toast";m.textContent=t;document.body.appendChild(m);setTimeout(function(){m.remove();},2200);}
+
+var GDEF={wage:10320,wageExtra:0,kwh:150,fRent:0,fMgmt:0,fIns:0,fTele:0,fEquip:0,fEquipM:36,fOwner:0,fMonthly:600,waste:10,vatMode:"gen",fee:0,card:1.5,target:25,ship:0,perOrder:1,tTarget:27,tRoom:24,tFlour:22,tFric:20,tTap:15,lbName:"",lbShop:"",lbAddr:"",lbDays:3,lbKeep:"직사광선을 피해 서늘한 곳에 보관",lbDate:"",devH:8,devRate:25000,devTry:3,devProfit:20,onb:false,expert:false,tab:"home"};
+var G=Object.assign({},GDEF,lsGet("lab_g",{}));
+var prices=lsGet("lab_prices",{});
+var S=null,hist=[];
+
+function info(n){return D[n]||{c:"직접 추가",r:"other",w:0,p:0,a:1,u:"kg",d:"직접 추가한 재료예요. 원가표에 가격을 넣어주세요.",up:"",dn:""};}
+function priceOf(n){var b=info(n),o=prices[n]||{};return{p:o.p!=null?o.p:b.p,a:o.a!=null?o.a:b.a,u:o.u||b.u,g:o.g!=null?o.g:(b.g||50),y:o.y!=null?o.y:100};}
+function unitG(u,g){return u==="kg"||u==="L"?1000:(u==="개"?g:1);}
+function perGram(q){var grams=q.a*unitG(q.u,q.g)*(Math.max(q.y,1)/100);return grams>0?q.p/grams:0;}
+
+function newState(name){var p=P[name];return{name:name,type:name,mode:"pieces",flourG:0,autoFlour:true,pieces:p.pc,weight:p.wt,loss:3,bakeLoss:12,price:p.pr,
+  items:p.it.map(function(x){return{n:x[0],pct:x[1],base:x[1]};}),
+  top:[],pack:[{n:"빵 봉투",p:9000,q:100},{n:"스티커 라벨",p:12000,q:500}],
+  t:{prep:15,shape:25,bake:10,pack:15},e:{kw:6,ov:p.bm,kw2:.5,eq:20}};}
+function snap(){hist.push(JSON.stringify(S));if(hist.length>30)hist.shift();}
+function save(){lsSet("lab_cur",S);lsSet("lab_g",G);lsSet("lab_prices",prices);}
+
+// ---------- 배합 계산 ----------
+function calc(){
+  var fp=0,sp=0,w=0;S.items.forEach(function(it){var f=info(it.n);sp+=it.pct;if(f.r==="flour")fp+=it.pct;else w+=it.pct*f.w;});
+  var keep=1-Math.min(num(S.loss),50)/100,total,fg;
+  if(S.mode==="flour"){fg=fp>0?num(S.flourG)*100/fp:0;total=fg*sp/100;S.pieces=num(S.weight)>0?Math.max(1,Math.floor(total*keep/num(S.weight))):1;}
+  else{total=num(S.pieces)*num(S.weight)/keep;fg=sp>0?total/(sp/100):0;S.flourG=Math.round(fg*fp/100);}
+  var ing=0;
+  S.items.forEach(function(it){ing+=fg*it.pct/100*perGram(priceOf(it.n));});
+  return{fp:fp,sp:sp,total:total,fg:fg,hyd:fp>0?w/fp*100:0,ing:ing};
+}
+// ---------- 원가 계산 ----------
+function vatShare(m){return m==="gen"?1/11:m==="mfg"?.02:m==="food"?.015:0;}
+function cost(mul){
+  var c=calc(),pcs=Math.max(num(S.pieces),1);
+  var ing=c.ing*(mul||1)/pcs;
+  var top=0;S.top.forEach(function(t){top+=num(t.g)*perGram({p:num(t.p),a:num(t.a),u:t.u,g:50,y:100})*(mul||1);});
+  var pack=0;S.pack.forEach(function(k){pack+=num(k.q)>0?num(k.p)/num(k.q):0;});
+  var mins=num(S.t.prep)+num(S.t.shape)+num(S.t.bake)+num(S.t.pack);
+  var labor=mins/60*num(G.wage)*(1+num(G.wageExtra)/100)/pcs;
+  var energy=(num(S.e.kw)*num(S.e.ov)/60+num(S.e.kw2)*num(S.e.eq)/60)*num(G.kwh)/pcs;
+  var made=ing+top+pack+labor+energy;
+  var wst=Math.min(num(G.waste),90)/100;
+  var ship=num(G.ship)/Math.max(num(G.perOrder),1);
+  var varSold=made/(1-wst)+ship;
+  var fixedM=num(G.fRent)+num(G.fMgmt)+num(G.fIns)+num(G.fTele)+(num(G.fEquipM)>0?num(G.fEquip)/num(G.fEquipM):0)+num(G.fOwner);
+  var fixedPer=fixedM/Math.max(num(G.fMonthly),1);
+  var total=varSold+fixedPer;
+  var share=vatShare(G.vatMode)+(num(G.fee)+num(G.card))/100;
+  return{c:c,ing:ing,top:top,pack:pack,labor:labor,energy:energy,made:made,wst:wst,wasteAdd:varSold-made-ship,ship:ship,varSold:varSold,fixedM:fixedM,fixedPer:fixedPer,total:total,share:share,mins:mins};
+}
+function atPrice(k,P){var net=P*(1-k.share),unit=net-k.total,cm=net-k.varSold;
+  return{net:net,unit:unit,margin:P>0?unit/P*100:0,bep:cm>0?Math.ceil(k.fixedM/cm):null,cm:cm};}
+function bepTxt(k,a){return k.fixedM<=0?"고정비 미입력":(a.bep!=null?a.bep.toLocaleString("ko-KR")+"개":"불가");}
+function recPrice(k){var d=1-k.share-num(G.target)/100;return d>0?Math.ceil(k.total/d/100)*100:null;}
+
+// ---------- 화면 ----------
+function fillInputs(){
+  if(!S.mode)S.mode="pieces";if(S.autoFlour==null)S.autoFlour=true;
+  $("mode").value=S.mode;$("pieces").disabled=S.mode==="flour";$("flourG").disabled=S.mode!=="flour";$("autoFlour").checked=S.autoFlour;
+  $("rname").value=S.name;$("pieces").value=S.pieces;$("weight").value=S.weight;$("loss").value=S.loss;$("bakeLoss").value=S.bakeLoss;
+  $("tPrep").value=S.t.prep;$("tShape").value=S.t.shape;$("tBake").value=S.t.bake;$("tPack").value=S.t.pack;
+  $("kw").value=S.e.kw;$("ovMin").value=S.e.ov;$("kw2").value=S.e.kw2;$("eqMin").value=S.e.eq;
+  ["wage","wageExtra","kwh","fRent","fMgmt","fIns","fTele","fEquip","fEquipM","fOwner","fMonthly","waste","fee","card","target","ship","perOrder","devH","devRate","devTry","devProfit"].forEach(function(id){$(id).value=G[id];});
+  $("vatMode").value=G.vatMode;$("price").value=S.price;
+}
+function render(){
+  var c=calc(),tb="";
+  S.items.forEach(function(it,i){var g=c.fg*it.pct/100,f=info(it.n),d=r1(it.pct-it.base),tip="";
+    if(Math.abs(d)>=.1){var R=ROLE[f.r]||ROLE.other;tip='<tr><td colspan="4" class="tip ch">기준 '+it.base+'% → '+r1(it.pct)+'% ('+(d>0?"+":"")+d+'): '+esc(d>0?(f.up||R[0]):(f.dn||R[1]))+'</td></tr>';}
+    tb+='<tr><td>'+esc(it.n)+'<div class="tip">'+esc(f.c)+'</div></td><td style="width:92px"><input class="r" type="number" inputmode="decimal" step="0.1" id="pct'+i+'" data-i="'+i+'" value="'+r1(it.pct)+'" aria-label="'+esc(it.n)+' 퍼센트"></td><td style="width:96px"><input class="r" type="number" inputmode="decimal" id="g'+i+'" data-g="'+i+'" value="'+r1(g)+'" aria-label="'+esc(it.n)+' 그램"></td><td style="width:30px"><button class="x" data-del="'+i+'" aria-label="'+esc(it.n)+' 삭제">✕</button></td></tr>'+tip;});
+  $("tbody").innerHTML=tb;
+  $("sFlour").textContent=r1(c.fg*c.fp/100)+"g";$("pieces").value=S.pieces;$("flourG").value=S.flourG;
+  $("modeNote").textContent=S.mode==="flour"?"밀가루 "+S.flourG+"g 기준으로 모든 재료를 계산해요. 이 반죽으로 "+S.weight+"g짜리 "+S.pieces+"개를 만들 수 있어요.":"개수 × 개당 무게로 필요한 반죽을 정하고, 거꾸로 밀가루 양("+S.flourG+"g)을 계산해요.";$("sTotal").textContent=r1(c.total)+"g";$("sHyd").textContent=r1(c.hyd)+"%";$("sPct").textContent=r1(c.sp);
+  $("finW").textContent=r1(num(S.weight)*(1-num(S.bakeLoss)/100))+"g";
+  renderSubs();renderCost();
+}
+function renderCost(){
+  var k=cost(),c=k.c,h="";
+  S.items.forEach(function(it,i){var q=priceOf(it.n),g=c.fg*it.pct/100,pg=perGram(q);
+    h+='<tr><td>'+esc(it.n)+'</td><td><input class="r" type="number" inputmode="decimal" id="cp'+i+'p" data-cp="'+esc(it.n)+'" data-f="p" value="'+q.p+'"></td><td><input class="r" type="number" inputmode="decimal" id="cp'+i+'a" data-cp="'+esc(it.n)+'" data-f="a" value="'+q.a+'"></td><td><select id="cp'+i+'u" data-cp="'+esc(it.n)+'" data-f="u">'+["g","kg","ml","L","개"].map(function(u){return'<option'+(q.u===u?" selected":"")+'>'+u+'</option>';}).join("")+'</select></td><td class="adv"><input class="r" type="number" inputmode="decimal" id="cp'+i+'g" data-cp="'+esc(it.n)+'" data-f="g" value="'+q.g+'"'+(q.u==="개"?"":" disabled")+'></td><td class="adv"><input class="r" type="number" inputmode="decimal" id="cp'+i+'y" data-cp="'+esc(it.n)+'" data-f="y" value="'+q.y+'"></td><td class="r mono adv">'+r1(pg)+'</td><td class="r mono">'+won(g*pg)+'</td></tr>';});
+  $("ingCostBody").innerHTML=h;$("ingTotal").textContent=won(c.ing);$("ingPer").textContent=won(k.ing);
+  var th="";S.top.forEach(function(t,i){var pc=num(t.g)*perGram({p:num(t.p),a:num(t.a),u:t.u,g:50,y:100});
+    th+='<tr><td><input id="tp'+i+'n" data-tp="'+i+'" data-f="n" value="'+esc(t.n)+'"></td><td><input class="r" type="number" inputmode="decimal" id="tp'+i+'g" data-tp="'+i+'" data-f="g" value="'+t.g+'"></td><td><input class="r" type="number" inputmode="decimal" id="tp'+i+'p" data-tp="'+i+'" data-f="p" value="'+t.p+'"></td><td><input class="r" type="number" inputmode="decimal" id="tp'+i+'a" data-tp="'+i+'" data-f="a" value="'+t.a+'"></td><td><select id="tp'+i+'u" data-tp="'+i+'" data-f="u">'+["g","kg","ml","L"].map(function(u){return'<option'+(t.u===u?" selected":"")+'>'+u+'</option>';}).join("")+'</select></td><td class="r mono">'+won(pc)+'</td><td><button class="x" data-tpdel="'+i+'" aria-label="토핑 삭제">✕</button></td></tr>';});
+  $("topBody").innerHTML=th||'<tr><td colspan="7" class="tip">토핑이 없으면 비워두세요.</td></tr>';
+  var ph="";S.pack.forEach(function(p,i){ph+='<tr><td><input id="pk'+i+'n" data-pk="'+i+'" data-f="n" value="'+esc(p.n)+'"></td><td><input class="r" type="number" inputmode="decimal" id="pk'+i+'p" data-pk="'+i+'" data-f="p" value="'+p.p+'"></td><td><input class="r" type="number" inputmode="decimal" id="pk'+i+'q" data-pk="'+i+'" data-f="q" value="'+p.q+'"></td><td class="r mono">'+won(num(p.q)>0?num(p.p)/num(p.q):0)+'</td><td><button class="x" data-pkdel="'+i+'" aria-label="포장재 삭제">✕</button></td></tr>';});
+  $("packBody").innerHTML=ph||'<tr><td colspan="5" class="tip">포장재를 추가하세요.</td></tr>';
+  updateNumbers(k);
+}
+function updateNumbers(k){
+  k=k||cost();
+  $("laborOut").innerHTML="→ 이번 배치 "+k.mins+"분, 개당 <b class='mono'>"+won(k.labor)+"</b>";
+  $("energyOut").innerHTML="→ 개당 <b class='mono'>"+won(k.energy)+"</b>";
+  $("fixedOut").innerHTML="→ 월 고정비 <b class='mono'>"+won(k.fixedM)+"</b>, 개당 <b class='mono'>"+won(k.fixedPer)+"</b>";
+  var parts=[["재료",k.ing,"--bar1"],["토핑",k.top,"--bar2"],["포장",k.pack,"--bar3"],["인건비",k.labor,"--bar4"],["에너지",k.energy,"--bar5"],["폐기 부담",k.wasteAdd,"--bar6"],["배달·배송",k.ship,"--ai"],["고정비",k.fixedPer,"--sub"]];
+  var st="",lg="";parts.forEach(function(p){var w=k.total>0?p[1]/k.total*100:0;if(w>0)st+='<i style="width:'+w+'%;background:var('+p[2]+')" title="'+p[0]+'"></i>';
+    lg+='<div><span><s style="background:var('+p[2]+')"></s>'+p[0]+'</span><span class="mono">'+won(p[1])+' · '+Math.round(w)+'%</span></div>';});
+  $("stack").innerHTML=st;$("legend").innerHTML=lg;
+  var P0=num(S.price),a=atPrice(k,P0),rec=recPrice(k);
+  var foodBase=P0*(1-vatShare(G.vatMode));var food=foodBase>0?(k.ing+k.top)/foodBase*100:0;
+  var monthlyProfit=num(G.fMonthly)*a.cm-k.fixedM;
+  $("result").innerHTML=
+   '<div><span>개당 원가 (팔린 1개 기준)</span><b>'+won(k.total)+'</b></div>'+
+   '<div><span>1개 팔면 내 손에 (세금·수수료 뒤)</span><b>'+won(a.net)+'</b></div>'+
+   '<div><span>개당 순이익 · 마진</span><b>'+won(a.unit)+' · '+r1(a.margin)+'%</b></div>'+
+   '<div><span>식재료 원가율 (보통 25~35%)</span><b>'+r1(food)+'%</b></div>'+
+   '<div><span>목표 마진 '+num(G.target)+'% 권장가</span><b>'+(rec?won(rec):"불가")+'</b></div>'+
+   '<div><span>손익분기 판매량 (월)</span><b>'+bepTxt(k,a)+'</b></div>'+
+   '<div><span>월 '+num(G.fMonthly)+'개 팔 때 월 이익</span><b>'+won(monthlyProfit)+'</b></div>';
+  var v,cls;
+  if(a.cm<=0){cls="bad";v="이 가격으로는 팔수록 손해예요. 판매가를 올리거나 재료·인건비를 줄여야 해요.";}
+  else if(a.unit<0){cls="warn";v="1개당 변동비는 남지만 고정비를 못 덮어요. 월 "+a.bep.toLocaleString("ko-KR")+"개 넘게 팔아야 이익이 나요"+(a.bep>num(G.fMonthly)?" (지금 목표 "+num(G.fMonthly)+"개보다 많아요).":".");}
+  else if(a.margin<num(G.target)){cls="warn";v="이익은 나지만 목표 마진보다 낮아요. 권장가 "+(rec?won(rec):"-")+" 정도를 검토하세요.";}
+  else{cls="ok";v="목표 마진을 넘었어요. 이 가격이 시장에서 받아들여지는지 팝업 판매로 확인해 보세요.";}
+  if(food>40)v+=" 식재료 원가율이 40%를 넘어 재료비 부담이 커요.";
+  $("verdict").innerHTML='<div class="msg '+cls+'">'+esc(v)+'</div>';
+  var sc="",set={};[P0-1000,P0-500,P0,P0+500,P0+1000,rec||0].forEach(function(p){if(p>0&&!set[p]){set[p]=1;var x=atPrice(k,p);
+    sc+='<tr'+(p===P0?' style="font-weight:600"':'')+'><td class="mono">'+won(p)+(p===rec?" 권장":"")+(p===P0?" 현재":"")+'</td><td class="r mono">'+won(x.net)+'</td><td class="r mono">'+won(x.unit)+'</td><td class="r mono">'+r1(x.margin)+'%</td><td class="r mono">'+bepTxt(k,x)+'</td></tr>';}});
+  $("scen").innerHTML=sc;
+  var kpi=$("kMarginBox");kpi.className="kpi "+(a.unit<0?"bad":(a.margin<num(G.target)?"warn":"ok"));
+  if($("miniKpi"))$("miniKpi").textContent="1개 "+won(k.total)+" · 마진 "+Math.round(a.margin)+"%";
+  $("kCost").textContent=won(k.total);$("kMargin").textContent=won(a.unit)+" · "+Math.round(a.margin)+"%";
+  $("kRec").textContent=rec?won(rec):"불가";$("kBep").textContent=bepTxt(k,a);
+  $("kBepBox").className="kpi "+(k.fixedM<=0?"":(a.bep==null||a.bep>num(G.fMonthly)?"warn":"ok"));
+  whatIf();devQuote(k);brief(k);tempCalc();renderLabel();
+}
+function whatIf(){var v=num($("whatIf").value),k=cost(1+v/100),a=atPrice(k,num(S.price));
+  $("whatLbl").textContent=(v>0?"+":"")+v+"%";
+  $("whatOut").textContent="재료값이 "+(v>0?"+":"")+v+"% 변하면 개당 원가 "+won(k.total)+", 마진 "+r1(a.margin)+"%, 손익분기 "+bepTxt(k,a)+"가 돼요.";}
+function devQuote(k){var c=k.c,labor=num(G.devH)*num(G.devRate),trial=(c.ing+k.top*num(S.pieces)+k.energy*num(S.pieces))*num(G.devTry);
+  var sub=labor+trial,tot=Math.ceil(sub*(1+num(G.devProfit)/100)/10000)*10000;
+  $("devOut").innerHTML='<div class="result"><div><span>작업비</span><b>'+won(labor)+'</b></div><div><span>시험 재료·에너지 ('+num(G.devTry)+'회)</span><b>'+won(trial)+'</b></div><div><span>견적 (부가세 별도)</span><b>'+won(tot)+'</b></div></div><p class="note">견적에는 배합표, 원가표, 공정 설명을 함께 넘기는 것으로 잡아요. 카페가 레시피를 그대로 쓰는 권리 범위는 계약서에 적어두세요.</p>';}
+
+// ---------- 배합 점검 ----------
+function pctName(n){var s=0;S.items.forEach(function(it){if(it.n===n)s+=it.pct;});return s;}
+function pctRole(r){var s=0;S.items.forEach(function(it){if(info(it.n).r===r)s+=it.pct;});return s;}
+function yeastEq(){return pctName("인스턴트 드라이이스트")+pctName("생이스트")/3;}
+function find(n){for(var i=0;i<S.items.length;i++)if(S.items[i].n===n)return S.items[i];return null;}
+function setPct(n,v){var it=find(n);if(it)it.pct=v;else S.items.push({n:n,pct:v,base:0});}
+function setYeast(v){if(find("생이스트")&&!find("인스턴트 드라이이스트"))find("생이스트").pct=r1(v*3);else setPct("인스턴트 드라이이스트",v);}
+function addWater(d){if(!d)return;var w=find("물");if(w){w.pct=r1(Math.max(0,w.pct+d));return;}var m=find("우유");if(m){m.pct=r1(Math.max(0,m.pct+d/.87));return;}if(d>0)S.items.push({n:"물",pct:r1(d),base:0});}
+function normFlour(){var c=calc();if(c.fp>0&&Math.abs(c.fp-100)>.5){var k=100/c.fp;S.items.forEach(function(it){if(info(it.n).r==="flour")it.pct=r1(it.pct*k);});}}
+function diagnose(){
+  var p=P[S.type]||{k:"enriched",h:[55,75]},c=calc(),out=[],fx=[];
+  var whole=pctName("통밀가루")+pctName("호밀가루")+pctName("보리가루"),rice=pctName("쌀가루");
+  if(Math.abs(c.fp-100)>.5){out.push(["bad","밀가루류 합계가 "+r1(c.fp)+"%예요. 100이 되어야 해요."]);fx.push(["밀가루 합계 100%",normFlour]);}
+  if(p.k!=="cake"){
+    var lo=p.h[0]+whole*.15+rice*.05,hi=p.h[1]+whole*.15+rice*.05,mid=r1((lo+hi)/2);
+    if(c.hyd<lo-.5){out.push(["warn","수분율 "+r1(c.hyd)+"%: "+S.type+" 권장 "+r1(lo)+"~"+r1(hi)+"%보다 낮아요. 속이 조밀하고 빨리 굳어요."]);fx.push(["수분율 "+mid+"%",function(){addWater((mid-calc().hyd)*calc().fp/100);}]);}
+    else if(c.hyd>hi+.5){out.push(["warn","수분율 "+r1(c.hyd)+"%: 권장 "+r1(lo)+"~"+r1(hi)+"%보다 높아요. 성형이 어려워요."]);fx.push(["수분율 "+mid+"%",function(){addWater((mid-calc().hyd)*calc().fp/100);}]);}
+    else out.push(["ok","수분율 "+r1(c.hyd)+"%: 적당해요 (권장 "+r1(lo)+"~"+r1(hi)+"%)."]);
+    var salt=pctName("소금");
+    if(salt<1.5){out.push(["warn","소금 "+salt+"%: 적어요. 맛이 밍밍하고 반죽이 처져요."]);fx.push(["소금 1.8%",function(){setPct("소금",1.8);}]);}
+    else if(salt>2.3){out.push(["bad","소금 "+salt+"%: 많아서 발효가 느려져요."]);fx.push(["소금 2%",function(){setPct("소금",2);}]);}
+    else out.push(["ok","소금 "+salt+"%: 적당해요."]);
+    var y=yeastEq(),sug=pctRole("sugar");
+    if(pctName("르방")>0)out.push(["info","르방 "+pctName("르방")+"%: 천연발효라 실온 발효가 길어요(보통 4~12시간)."]);
+    else if(y===0){out.push(["bad","이스트가 없어요."]);fx.push(["이스트 1.2%",function(){setYeast(1.2);}]);}
+    else{var ylo=p.k==="lean"?.3:1,yhi=p.k==="lean"?1.5:(p.k==="sweet"?3:2.2);
+      if(sug>10&&y<1.5){out.push(["warn","설탕류 "+r1(sug)+"%로 단 반죽인데 이스트가 적어요."]);fx.push(["이스트 2%",function(){setYeast(2);}]);}
+      else if(y<ylo)out.push(["warn","이스트 "+r1(y)+"%: 적어요. 저온 장시간 발효가 아니면 늘리세요."]);
+      else if(y>yhi){out.push(["warn","이스트 "+r1(y)+"%: 많아요. 술냄새가 날 수 있어요."]);fx.push(["이스트 "+r1((ylo+yhi)/2)+"%",function(){setYeast(r1((ylo+yhi)/2));}]);}
+      else out.push(["ok","이스트(인스턴트 환산) "+r1(y)+"%: 적당해요."]);}
+    if(rice>25&&pctName("글루텐")<rice*.08){out.push(["warn","쌀가루 "+rice+"%: 글루텐이 부족해 부피가 작을 수 있어요."]);fx.push(["글루텐 "+r1(rice*.1)+"%",function(){setPct("글루텐",r1(rice*.1));}]);}
+  }else{var bt=pctRole("fat"),sg=pctRole("sugar");
+    out.push(["info","과자·케이크류는 수분율 대신 비율을 봐요. 유지 "+r1(bt)+"%, 설탕류 "+r1(sg)+"%."]);
+    if(bt>0&&sg>bt*1.6)out.push(["warn","설탕이 유지보다 많이 많아 딱딱하고 쉽게 탈 수 있어요."]);}
+  var h="";out.forEach(function(o){h+='<div class="msg '+o[0]+'">'+esc(o[1])+'</div>';});
+  h+=fx.length?'<p class="note">권장 보정: '+fx.map(function(f){return esc(f[0]);}).join(" · ")+'</p>':'<div class="msg ok">고칠 점이 없어요. 구워 보고 결과를 기록 탭에 남기세요.</div>';
+  $("diagOut").innerHTML=h;return fx;
+}
+// ---------- 재료 바꾸기 ----------
+function renderSubs(){var cur=$("subFrom").value,o="";S.items.forEach(function(it){o+="<option>"+esc(it.n)+"</option>";});$("subFrom").innerHTML=o;
+  if(cur&&find(cur))$("subFrom").value=cur;updTo();}
+function updTo(){var r=SUB[$("subFrom").value]||[];$("subTo").innerHTML=r.length?r.map(function(x,i){return'<option value="'+i+'">'+esc(x.to)+'</option>';}).join(""):'<option value="-1">등록된 규칙 없음</option>';updSubNote();}
+function updSubNote(){var r=(SUB[$("subFrom").value]||[])[num($("subTo").value)];$("subNote").textContent=r?r.n:"이 재료는 규칙이 없어요. 레시피 비서에게 물어보세요.";}
+function doSub(){var from=$("subFrom").value,it=find(from),r=(SUB[from]||[])[num($("subTo").value)];if(!it||!r){toast("바꿀 규칙이 없어요.");return;}
+  snap();var amt=it.pct;
+  if(r.lev){S.items=S.items.filter(function(x){return x!==it;});setPct("르방",20);S.items.forEach(function(x){if(info(x.n).r==="flour")x.pct=r1(x.pct*.9);});addWater(-10);normFlour();}
+  else if(r.flat){it.n=r.to;addWater(r.wd);}
+  else{var nv=r1(amt*r.f);S.items=S.items.filter(function(x){return x!==it;});var ex=find(r.to);if(ex)ex.pct=r1(ex.pct+nv);else S.items.push({n:r.to,pct:nv,base:0});
+    if(r.wd)addWater(r1(amt*r.wd));(r.add||[]).forEach(function(a){var e=find(a[0]),v=r1(amt*a[1]);if(e)e.pct=r1(e.pct+v);else S.items.push({n:a[0],pct:v,base:0});});}
+  toast(from+" → "+r.to+"로 바꿨어요.");render();diagnose();save();}
+function locNote(){var L=LOC[$("locSel").value];$("locNote").textContent="권장 "+L.rng+" · "+L.n;}
+function doLoc(){var L=LOC[$("locSel").value],v=num($("locPct").value)||L.def;snap();
+  if(L.mode==="replace"){var main=null;S.items.forEach(function(x){if(info(x.n).r==="flour"&&x.n!==L.ing&&(!main||x.pct>main.pct))main=x;});
+    if(!main){toast("바꿀 밀가루가 없어요.");hist.pop();return;}var take=Math.min(v,main.pct);main.pct=r1(main.pct-take);
+    var e=find(L.ing);if(e)e.pct=r1(e.pct+take);else S.items.push({n:L.ing,pct:take,base:0});
+    if(main.pct<=0)S.items=S.items.filter(function(x){return x!==main;});if(L.wpp)addWater(r1(take*L.wpp));
+    if(L.gl){var gl=r1(take*L.gl),g=find("글루텐");if(g)g.pct=r1(Math.max(g.pct,gl));else S.items.push({n:"글루텐",pct:gl,base:0});}}
+  else{var e2=find(L.ing);if(e2)e2.pct=r1(e2.pct+v);else S.items.push({n:L.ing,pct:v,base:0});if(L.wpp)addWater(r1(v*L.wpp));
+    if(L.sc){var s=find("설탕");if(s)s.pct=r1(Math.max(0,s.pct-v*L.sc));}}
+  toast($("locSel").value+" "+v+"%를 넣었어요.");render();diagnose();save();}
+
+// ---------- 밀가루 변경 → 다른 재료 자동 조정 ----------
+// 강력분 대비 흡수율 차이 (해당 밀가루 100%일 때 물 %p)
+var ABS={"강력분":0,"중력분":-3,"박력분":-6,"통밀가루":15,"호밀가루":15,"우리밀가루":-3,"쌀가루":5,"보리가루":10,"T65":-2,"T55":-3,"세몰리나":3};
+function flourMap(){var m={};S.items.forEach(function(x){if(info(x.n).r==="flour")m[x.n]=(m[x.n]||0)+x.pct;});return m;}
+function liquidPct(){var w=find("물");if(w)return["물",w.pct];var m=find("우유");if(m)return["우유",m.pct];return null;}
+function autoAdjust(before){
+  var after=flourMap(),names={},lines=[],dW=0;Object.keys(before).concat(Object.keys(after)).forEach(function(n){names[n]=1;});
+  var fl=[];Object.keys(names).forEach(function(n){var a=r1(before[n]||0),b=r1(after[n]||0);if(a!==b){fl.push(n+" "+a+"→"+b+"%");dW+=(b-a)*(ABS[n]||0)/100;}});
+  if(!fl.length)return;
+  lines.push("밀가루: "+fl.join(", "));
+  var kind=(P[S.type]||{}).k;
+  if(kind!=="cake"&&Math.abs(dW)>=.1){var lq=liquidPct();if(lq){var old=lq[1];addWater(r1(dW));var nw=find(lq[0]).pct;lines.push(lq[0]+" "+old+"→"+nw+"% ("+(dW>0?"+":"")+r1(dW)+") · 바뀐 밀가루의 흡수율에 맞춤");}}
+  var need=r1((after["쌀가루"]||0)*.1+(after["보리가루"]||0)*.05),gl=find("글루텐");
+  if(kind!=="cake"&&need>=.5&&(!gl||gl.pct<need)){var og=gl?gl.pct:0;setPct("글루텐",need);lines.push("글루텐 "+og+"→"+need+"% · 쌀·보리는 글루텐이 없어 부피 보충");}
+  var c=calc();lines.push("소금·설탕·이스트는 밀가루 대비 %라 그대로 두고, g은 밀가루 양에 맞춰 자동으로 따라가요. 지금 수분율 "+r1(c.hyd)+"%.");
+  S.lastAuto=lines.join("\n");
+  $("autoMsg").hidden=false;
+  $("autoMsg").innerHTML='<div class="msg info" style="white-space:pre-wrap">'+esc(S.lastAuto)+'</div><div class="row" style="margin-top:6px"><button class="ais sm" id="aiReview">비서에게 확인받기</button><button class="soft sm" id="autoUndo">되돌리기</button></div>';
+  $("aiReview").onclick=function(){sendMsg("방금 밀가루 구성을 바꿔서 앱이 이렇게 자동 조정했어:\n"+S.lastAuto+"\n이 조정이 적절한지 점검하고, 더 바꿀 재료가 있으면 배합표를 직접 고쳐줘. 발효·굽기에서 주의할 점도 알려줘.");};
+  $("autoUndo").onclick=function(){$("undoBtn").click();$("autoMsg").hidden=true;};
+}
+
+// ---------- 한눈에 보기 ----------
+function brief(k){
+  k=k||cost();var c=k.c,a=atPrice(k,num(S.price));
+  var txt="<b>"+esc(S.name)+"</b> "+S.pieces+"개 (개당 반죽 "+S.weight+"g) · 밀가루 <b>"+Math.round(c.fg*c.fp/100).toLocaleString("ko-KR")+"g</b> · 수분율 <b>"+r1(c.hyd)+"%</b><br>"+
+    "1개 만드는 데 <b>"+won(k.total)+"</b> 들고, <b>"+won(num(S.price))+"</b>에 팔면 ";
+  txt+=a.unit>=0?"1개당 <b>"+won(a.unit)+"</b> 남아요 (마진 "+Math.round(a.margin)+"%).":"1개당 <b>"+won(-a.unit)+"</b> 손해예요. 판매가를 "+(recPrice(k)?won(recPrice(k)):"올리기")+" 정도로 검토하세요.";
+  if(k.fixedM<=0)txt+="<br>월세 같은 고정비는 아직 0원이에요. '원가·가격' 탭 ⑥에 넣으면 더 정확해져요.";
+  $("brief").innerHTML=txt;
+}
+
+// ---------- AI ----------
+var sample=null,ctl=null;
+var ERR={not_granted:"AI 사용을 허용하지 않아 이번에는 답할 수 없어요.",sampling_disabled:"이 계정에서는 AI를 쓸 수 없어요.",rate_limited:"요청이 많아요. 잠시 뒤 다시 눌러주세요.",session_expired:"다시 로그인한 뒤 눌러주세요.",refused:"이 질문에는 답할 수 없어요. 질문을 바꿔보세요.",empty_completion:"답이 비어 있어요. 질문을 더 짧게 해보세요.",invalid_json:"배합을 읽지 못했어요. 한 번 더 눌러주세요.",prompt_too_large:"보낼 내용이 너무 길어요. 실험 기록 일부를 지워주세요."};
+function errText(e){return ERR[e&&e.code]||"연결이 끊겼어요. 다시 눌러주세요.";}
+function context(){
+  var k=cost(),c=k.c,a=atPrice(k,num(S.price)),L=[];
+  L.push("[제품] "+S.name+" ("+S.type+" 기반), "+S.pieces+"개 × 반죽 "+S.weight+"g, 수분율 "+r1(c.hyd)+"%");
+  L.push("[배합 - 베이커 퍼센트]");S.items.forEach(function(it){L.push("- "+it.n+" "+r1(it.pct)+"% ("+r1(c.fg*it.pct/100)+"g, "+won(c.fg*it.pct/100*perGram(priceOf(it.n)))+")");});
+  if(S.top.length){L.push("[토핑·충전 (개당)]");S.top.forEach(function(t){L.push("- "+t.n+" "+t.g+"g");});}
+  L.push("[개당 원가 내역] 재료 "+won(k.ing)+", 토핑 "+won(k.top)+", 포장 "+won(k.pack)+", 인건비 "+won(k.labor)+" (시급 "+G.wage+"원, 배치 "+k.mins+"분), 에너지 "+won(k.energy)+", 폐기 "+Math.round(k.wst*100)+"% 부담 "+won(k.wasteAdd)+", 배달·배송 "+won(k.ship)+", 고정비 "+won(k.fixedPer)+" (월 "+won(k.fixedM)+" ÷ "+G.fMonthly+"개) → 합계 "+won(k.total));
+  L.push("[세금·수수료 설정] 부가세 "+({gen:"일반과세",mfg:"간이(제조 2%)",food:"간이(음식점 1.5%)",none:"계산 안 함"}[G.vatMode])+", 채널 수수료 "+G.fee+"%, 카드 "+G.card+"%, 주문당 배송비 "+won(num(G.ship))+" / "+G.perOrder+"개");
+  L.push("[판매] 판매가 "+won(num(S.price))+", 세금·수수료 뒤 "+won(a.net)+", 개당 순이익 "+won(a.unit)+" (마진 "+r1(a.margin)+"%), 손익분기 월 "+bepTxt(k,a)+", 목표 마진 "+G.target+"%");
+  var d=$("diagOut").innerText.trim();if(d)L.push("[규칙 점검 결과]\n"+d);
+  var same=allRefs().filter(function(r){return r.t===S.type;}).slice(0,4);if(same.length){L.push("[같은 종류 참고 배합]");same.forEach(function(r){L.push("- "+r.n+" ("+(r.o||"-")+", "+r.src+"): "+mixText(r.items));});}
+  var logs=lsGet("lab_logs",[]).filter(function(l){return l.recipe===S.name;}).slice(-5);
+  if(logs.length){L.push("[최근 실험 기록]");logs.forEach(function(l){L.push("- "+l.date+" 평가 "+l.rate+"/5, 수분율 "+l.hyd+"%: "+l.note);});}
+  return L.join("\n");
+}
+var RULES="당신은 이 앱 안에 있는 '레시피 개발 비서'입니다. 초보 사장님(소규모 베이커리 창업자)이 지역 재료로 빵·과자를 연구 개발하고 원가·수수료·세금까지 이해하도록 돕는 제과제빵 R&D 셰프이자 원가 관리 전문가예요.\n일하는 방식:\n- 개발 순서(목표 확인 → 배합 초안 → 시험 계획 → 기록 해석 → 개선)를 따라 한 번에 한 단계씩 진행하세요. 목표가 불분명하면 먼저 짧게 물어보세요.\n- 배합을 바꾸라는 요청이면 도구로 배합표를 직접 고치고, 바꾼 재료와 %·이유를 짧은 목록으로 알려주세요. 밀가루류 합계는 100을 유지하세요.\n- 새 레시피를 만들 때는 new_recipe 도구를 쓰세요. 재료 이름은 가능하면 앱 재료 사전의 이름을 그대로 쓰세요: "+"__NAMES__"+"\n- 원가와 마진에 미치는 영향을 숫자로 함께 말해주세요(금액은 원). 어려운 용어는 쉬운 말로 풀어주세요.\n- 수수료·세금·포장·배송 기준값은 앱의 비용 정보 사전(2026년 10월 조사)을 따르세요: "+REF.map(function(r){return r.n+" "+r.v;}).join("; ")+"\n- 배합을 판단하거나 새로 만들 때는 get_references로 참고 레시피(국내외 표준·사용자가 모은 것)와 비교해서 근거를 말하세요. 표준 배합은 일반적인 참고값이에요.\n- 품목 배합, 크림, 속재료를 물으면 get_avg_recipe로 앱의 평균 기본 배합을 찾아 g 예시(밀가루 1,000g 기준)와 함께 답하고, 왜 그 비율인지·흔한 실패와 해결을 짧게 설명하세요. 신뢰도가 추정B면 테스트로 구워 조정하라고 덧붙이세요. 사용자가 원하면 new_recipe나 set_ingredients로 배합표에 넣어주세요.\n- 당신은 이 가게의 모든 기록을 기억하는 비서예요. 질문을 받으면 먼저 search_all이나 알맞은 도구로 앱 데이터를 확인하고, 데이터에 근거해 답하세요. 앱에 없는 내용은 일반 지식이라고 밝히세요.\n- 답은 핵심 한두 문장 먼저, 그다음 필요한 숫자·목록을 짧게. 끝에 다음에 하면 좋을 일을 하나 제안하세요(시리처럼 짧고 먼저 챙기는 말투).\n- 내일 생산량·날씨 영향 질문은 get_forecast, 하루 요약은 get_briefing, 지원금 질문은 get_grants를 쓰세요.\n- 생산량·폐기·매출 질문에는 get_sales로 판매 기록을 보고 답하세요.\n- 메뉴 구성·가격 질문에는 get_menu로 저장된 메뉴 손익을 보고 답하세요.\n- 확실하지 않은 내용은 '시험해서 확인'이라고 하고, 구운 뒤 '기록' 탭의 실험 기록에 남기라고 안내하세요.\n- 한국어로 짧게 답하고, 마크다운 기호(#, **, 표)는 쓰지 마세요.";
+var chat=lsGet("lab_chat",[]),busy=false,toolsOK=false;
+function rules(){return RULES.replace("__NAMES__",Object.keys(D).join(", "))+(toolsOK?"":"\n- 지금은 배합표를 직접 고칠 수 없어요. 바꿀 재료와 %를 목록으로 알려주세요.");}
+function recipeData(){var k=cost(),c=k.c,a=atPrice(k,num(S.price));return{name:S.name,type:S.type,pieces:S.pieces,dough_weight_g:S.weight,hydration_pct:r1(c.hyd),flour_total_pct:r1(c.fp),
+  items:S.items.map(function(it){return{n:it.n,pct:r1(it.pct),g:r1(c.fg*it.pct/100)};}),cost_per_piece_won:Math.round(k.total),price_won:num(S.price),profit_per_piece_won:Math.round(a.unit),margin_pct:r1(a.margin)};}
+function addBubble(role,text,extra){var d=document.createElement("div");d.className="bub "+role;d.textContent=text;if(extra)d.appendChild(extra);$("chat").appendChild(d);$("chat").scrollTop=$("chat").scrollHeight;return d;}
+function renderChat(){$("chat").innerHTML="";if(!chat.length)addBubble("ai","안녕하세요, 레시피 개발 비서예요. 지금 배합표와 원가를 보면서 함께 개발해요.\n\n아래 버튼을 누르거나 하고 싶은 걸 적어주세요. 배합을 고쳐달라고 하면 배합표를 직접 바꾸고, 마음에 안 들면 되돌리기로 돌아갈 수 있어요.");
+  chat.forEach(function(m){addBubble(m.role==="user"?"me":"ai",m.content);});}
+function saveChat(){chat=chat.slice(-30);lsSet("lab_chat",chat);}
+function changeNote(text){var w=document.createElement("div");w.className="row";var u=document.createElement("button");u.className="soft sm";u.textContent="되돌리기";u.onclick=function(){$("undoBtn").click();u.disabled=true;u.textContent="되돌렸어요";};w.appendChild(u);addBubble("sys",text,w);}
+function applyItems(list){S.items=list.filter(function(x){return x&&x.n&&isFinite(parseFloat(x.pct))&&parseFloat(x.pct)>0;}).map(function(x){var v=r1(num(x.pct));return{n:String(x.n).slice(0,30),pct:v,base:v};});}
+var TOOLS=[
+ {name:"get_recipe",description:"현재 배합표(재료·%·g), 수분율, 개당 원가, 판매가, 마진을 돌려줘요. 배합을 바꾼 뒤 결과를 확인할 때 쓰세요.",execute:function(){return recipeData();}},
+ {name:"set_ingredients",description:"배합표의 재료 %를 바꿔요. changes에 바꿀 재료만 넣으세요. 없는 재료는 새로 추가되고 pct 0이면 빠져요. 밀가루류 합계 100을 지키세요. 바뀐 배합과 원가를 돌려줘요.",
+  inputSchema:{type:"object",properties:{changes:{type:"array",items:{type:"object",properties:{n:{type:"string",description:"재료 이름"},pct:{type:"number",description:"새 베이커 퍼센트"}},required:["n","pct"]}},reason:{type:"string",description:"바꾸는 이유 한 줄"}},required:["changes"]},
+  execute:function(inp){var ch=Array.isArray(inp.changes)?inp.changes:[];if(!ch.length)throw new Error("changes가 비어 있어요");snap();var log=[];
+   ch.forEach(function(x){var n=String(x.n||"").slice(0,30),v=r1(num(x.pct)),it=find(n),old=it?it.pct:0;if(!n)return;if(v<=0){S.items=S.items.filter(function(y){return y.n!==n;});}else if(it){it.pct=v;}else S.items.push({n:n,pct:v,base:0});log.push(n+" "+old+"→"+(v>0?v:0)+"%");});
+   render();diagnose();save();changeNote("비서가 배합을 바꿨어요: "+log.join(", ")+(inp.reason?"\n이유: "+String(inp.reason):""));return recipeData();}},
+ {name:"new_recipe",description:"새 레시피로 배합표 전체를 바꿔요(원가 설정은 유지). type은 앱의 빵 종류 중 가장 가까운 것. 밀가루류 합계는 100.",
+  inputSchema:{type:"object",properties:{name:{type:"string"},type:{type:"string",enum:Object.keys(P)},pieces:{type:"number"},weight:{type:"number",description:"개당 반죽 무게 g"},price:{type:"number",description:"판매가 원(선택)"},items:{type:"array",items:{type:"object",properties:{n:{type:"string"},pct:{type:"number"}},required:["n","pct"]}}},required:["name","type","items"]},
+  execute:function(inp){if(!Array.isArray(inp.items)||!inp.items.length)throw new Error("items가 비어 있어요");snap();var type=P[inp.type]?inp.type:S.type,keep=S;
+   S=newState(type);S.top=keep.top;S.pack=keep.pack;S.t=keep.t;S.e.kw=keep.e.kw;S.e.kw2=keep.e.kw2;S.e.eq=keep.e.eq;S.autoFlour=keep.autoFlour;
+   S.name=String(inp.name||"새 레시피").slice(0,40);if(num(inp.pieces)>0)S.pieces=Math.round(num(inp.pieces));if(num(inp.weight)>0)S.weight=num(inp.weight);if(num(inp.price)>0)S.price=num(inp.price);
+   applyItems(inp.items);$("preset").value=type;fillInputs();render();diagnose();save();changeNote("비서가 새 레시피 '"+S.name+"'를 배합표에 넣었어요.");return recipeData();}},
+ {name:"get_references",description:"참고 레시피 모음(국내외 표준 배합과 사용자가 출처와 함께 모은 배합)을 돌려줘요. type으로 빵 종류를 거를 수 있어요. 새 레시피를 만들거나 배합을 판단할 때 근거로 쓰세요.",inputSchema:{type:"object",properties:{type:{type:"string",description:"빵 종류(선택)"}}},
+  execute:function(inp){var t=inp&&inp.type?String(inp.type):"";return allRefs().filter(function(r){return!t||r.t===t;}).slice(0,25).map(function(r){return{name:r.n,type:r.t,origin:r.o,source:r.src,items:mixText(r.items),note:r.d};});}},
+ {name:"get_avg_recipe",description:"앱에 저장된 평균 기본 배합(많이 팔리는 빵·과자 60종)과 속재료·크림 기본 레시피 22종을 찾아줘요. name으로 품목 이름(예: 소금빵, 커스터드)을 주면 평균%·범위·공정·설명·실패 원인·신뢰도를 돌려주고, 이름 없이 부르면 전체 목록을 돌려줘요. 배합·크림·속재료를 물으면 반드시 먼저 쓰세요.",inputSchema:{type:"object",properties:{name:{type:"string",description:"품목 이름(선택)"}}},
+  execute:function(inp){var q=inp&&inp.name?String(inp.name):"";if(!q)return{breads_and_pastries:AVG.map(function(r){return r.n+" ("+r.cat+", "+r.c+")";}),fillings_and_creams:FILL.map(function(r){return r.n;})};var r=avgFind(q);return r?avgForAI(r):{not_found:q,available:AVG.concat(FILL).map(function(r){return r.n;})};}},
+ {name:"search_all",description:"앱이 아는 모든 것(평균 배합 60종, 속재료·크림 22종, 재료 사전, 비용 정보 사전, 내 레시피, 실험 기록, 참고 레시피, 정부 지원사업)에서 검색어로 찾아줘요. 무엇이든 답하기 전에 관련 내용이 앱에 있는지 먼저 찾아보세요.",inputSchema:{type:"object",properties:{query:{type:"string",description:"찾을 말(예: 쌀가루, 배민, 크루아상, 지원금)"}},required:["query"]},execute:function(inp){var r=searchAll(inp&&inp.query);return r.length?r:{none:"앱에 없는 내용이에요. 일반 지식으로 답하되 그렇다고 밝히세요."};}},
+ {name:"get_forecast",description:"요일·날씨·공휴일/행사 영향을 판매 기록에서 학습한 생산량 예측을 돌려줘요. day(YYYY-MM-DD), weather(맑음/흐림/비/눈/폭염/한파), event(true/false)를 바꿔 '비 오면?' 같은 질문에도 답할 수 있어요.",inputSchema:{type:"object",properties:{day:{type:"string"},weather:{type:"string"},event:{type:"boolean"}}},execute:function(inp){inp=inp||{};var R=recommend({day:inp.day,w:inp.weather,ev:inp.event});return{day:R.day,weekday:dayName(R.day),weather:R.w||"모름",holiday:R.holi,event:R.ev,list:R.list,accuracy:accText(R.L),learned:learnedText(R.L)};}},
+ {name:"get_briefing",description:"오늘 브리핑(내일 추천 생산량, 빠진 기록, 폐기, 저마진 메뉴, 학습한 패턴, 예측 정확도, 다가오는 지원사업)을 돌려줘요.",execute:function(){return dayBrief();}},
+ {name:"get_grants",description:"베이커리 창업자·소상공인이 받을 수 있는 정부 지원사업 목록(대상, 금액, 시기, 신청처, 적합도, 근거 링크, 2026.10 확인)을 돌려줘요.",execute:function(){return GRANTS;}},
+ {name:"get_menu",description:"저장된 레시피별 개당 원가, 판매가, 개당 이익, 마진, 식재료 원가율을 돌려줘요. 메뉴 구성·가격 조언에 쓰세요.",execute:function(){return menuRows().map(function(r){return{menu:r.n,cost:Math.round(r.cost),price:r.price,profit:Math.round(r.unit),margin_pct:r1(r.margin),food_cost_pct:r1(r.food)};});}},
+ {name:"get_sales",description:"최근 판매·생산 기록(날짜, 메뉴, 만든 개수, 판 개수, 매출, 남은 돈)과 최근 7일 요약, 내일 추천 생산량을 돌려줘요. 생산량·폐기·매출 질문에 쓰세요.",
+  execute:function(){var l=salesAll(),R=recommend(),last=l.length?l[l.length-1].d:today(),a=salesAgg(l.filter(function(x){return x.d>addDays(last,-7);}));return{recent:l.slice(-40).map(function(x){return{date:x.d,day:dayName(x.d),menu:x.m,made:x.made,sold:x.sold,revenue:x.sold*x.price,profit:Math.round(x.sold*x.net-x.made*x.vm)};}),last7:{revenue:Math.round(a.rev),profit:Math.round(a.profit),waste_pct:r1(a.waste)},tomorrow:{day:R.day,weather:R.w,event:R.ev,list:R.list,accuracy:accText(R.L),learned:learnedText(R.L)}};}},
+ {name:"get_logs",description:"사용자가 남긴 최근 실험 기록(날짜, 레시피, 평가 1~5, 수분율, 메모)을 돌려줘요.",execute:function(){return lsGet("lab_logs",[]).slice(-10);}}
+];
+function setAI(on){$("aiStatus").textContent=on?"Claude 연결됨":"복사해서 쓰는 모드";$("fallback").hidden=on;$("stop").hidden=true;}
+function fbBuild(msg){var conv=chat.slice(-8).map(function(m){return(m.role==="user"?"나: ":"비서: ")+m.content;}).join("\n");
+  $("fbText").value=rules()+"\n\n[현재 배합과 원가]\n"+context()+"\n\n[오늘 브리핑]\n"+dayBrief().join("\n")+(function(){var r=avgFind(avgKey(msg));return r?"\n\n[앱의 평균 기본 배합]\n"+JSON.stringify(avgForAI(r)):"";})()+(conv?"\n\n[지금까지 대화]\n"+conv:"")+"\n\n[요청] "+msg;}
+function avgKey(t){var all=AVG.concat(FILL),best=null,bl=0;t=String(t).replace(/\s/g,"");all.forEach(function(r){r.n.split(/[(·)]/).forEach(function(k){k=k.replace(/\s/g,"");if(k.length>=2&&t.indexOf(k)>=0&&k.length>bl){best=r.n;bl=k.length;}});});return best||"";}
+function avgLocal(t){var k=avgKey(t);if(!k)return"";var r=avgFind(k),items=avgParse(r.it),base=!r.base&&r.cat,L=[];
+  L.push(r.n+" 평균 기본 배합이에요 ("+r.c+(r.sc?", 출처 "+r.sc+"개 비교":"")+")");
+  if(r.pop)L.push("많이 팔리는 이유: "+r.pop);
+  L.push("");L.push(r.base?"기준: "+r.base:"밀가루 합계 100% 기준 · 오른쪽은 밀가루 1,000g일 때");
+  items.forEach(function(x){L.push("- "+x.n+" "+x.pct+"%"+(x.lo!==null?" (보통 "+x.lo+"~"+x.hi+"%)":"")+(base?" → "+Math.round(x.pct*10)+"g":""));});
+  L.push("");if(r.m)L.push("만드는 방식: "+r.m);L.push("공정: "+r.pr);if(r.keep)L.push("보관: "+r.keep);if(r.ex)L.push("설명: "+r.ex);L.push("실패하면: "+r.f);
+  if(r.c==="추정B")L.push("출처가 적은 배합이라 한 번 테스트로 구워보고 조정하세요.");
+  L.push("");L.push("더 깊은 질문(변형, 내 배합 진단)은 아래 '질문 복사'로 Claude에 물어보세요. 이 배합도 함께 들어가요.");return L.join("\n");}
+var pcMQ=window.matchMedia?window.matchMedia("(min-width:1100px)"):null,isPC=false;
+function layoutMode(){var pc=!!(pcMQ&&pcMQ.matches);if(pc===isPC&&$("sheet").dataset.ready)return;isPC=pc;$("sheet").dataset.ready="1";
+  var hd=document.querySelector("header"),mn=document.querySelector("main.main"),ly=document.querySelector(".layout");
+  if(pc)mn.insertBefore(hd,mn.firstChild);else ly.parentNode.insertBefore(hd,ly);
+  if(pc){$("dock").appendChild($("sheet"));$("sheet").classList.add("docked");$("sheet").hidden=false;$("sheet").removeAttribute("aria-modal");renderChat();
+    ["d1","d2","d4"].forEach(function(id){$(id).open=true;});}
+  else{document.body.appendChild($("sheet"));$("sheet").classList.remove("docked");$("sheet").hidden=true;$("fab").hidden=false;}
+  $("msg").placeholder=pc?"예: 쑥으로 봄 한정 식빵 만들고 싶어 (Enter 보내기, Shift+Enter 줄바꿈)":"예: 쑥으로 봄 한정 식빵 만들고 싶어";}
+function openBot(){if(isPC){$("msg").focus();return;}$("sheet").hidden=false;$("fab").hidden=true;renderChat();setTimeout(function(){$("msg").focus({preventScroll:true});},50);}
+function closeBot(){if(isPC)return;$("sheet").hidden=true;$("fab").hidden=false;if(ctl)ctl.abort();}
+function sendMsg(text){
+  text=(text||"").trim();if(!text||busy)return;
+  if($("sheet").hidden)openBot();
+  if(!sample){chat.push({role:"user",content:text});saveChat();addBubble("me",text);fbBuild(text);var hit=brainLocal(text);if(hit){addBubble("ai",hit);chat.push({role:"assistant",content:hit});saveChat();$("msg").value="";speak(hit);return;}addBubble("ai","질문을 아래 칸에 만들었어요. '질문 복사'를 누르고 Claude 앱에 붙여넣으세요. 받은 답에 배합 숫자가 있으면 2번 배합표에 직접 고쳐 넣으면 돼요.");$("msg").value="";return;}
+  chat.push({role:"user",content:text});saveChat();addBubble("me",text);$("msg").value="";
+  var bub=addBubble("ai","생각하고 있어요… (배합을 고치면 30초~1분 걸릴 수 있어요)");
+  busy=true;$("send").disabled=true;$("stop").hidden=false;if(ctl)ctl.abort();ctl=new AbortController();var my=ctl;
+  var input=[{role:"user",content:rules()+"\n\n[현재 배합과 원가]\n"+context()+"\n\n[오늘 브리핑]\n"+dayBrief().join("\n")}].concat(chat.slice(-12));
+  var opt={signal:my.signal,onText:function(u){bub.textContent=u.text;$("chat").scrollTop=$("chat").scrollHeight;}};
+  if(toolsOK)opt.tools=TOOLS.map(function(t){var o={name:t.name,description:t.description,execute:function(inp){bub.textContent="배합표를 확인하고 고치는 중이에요…";return t.execute(inp||{});}};if(t.inputSchema)o.inputSchema=t.inputSchema;return o;});
+  else opt.cache=false;
+  sample(input,opt).then(function(r){var t=r.text;if(r.truncated)t+="\n\n(답이 길어 중간에 끊겼어요. 나눠서 물어보세요.)";bub.textContent=t;chat.push({role:"assistant",content:r.text});saveChat();speak(r.text);})
+  .catch(function(e){if(e.code==="cancelled"){bub.textContent=e.text||"멈췄어요.";if(e.text){chat.push({role:"assistant",content:e.text});saveChat();}return;}
+    bub.textContent=(e.text?e.text+"\n\n":"")+errText(e);if(e.code==="not_granted"||e.code==="sampling_disabled"){sample=null;setAI(false);fbBuild(text);}})
+  .then(function(){if(ctl===my){busy=false;$("send").disabled=false;$("stop").hidden=true;}});
+}
+function copyFrom(el){var t=el.value!=null?el.value:el.textContent;
+  function sel(){try{if(el.select){el.focus();el.select();}else{var r=document.createRange();r.selectNodeContents(el);var s=getSelection();s.removeAllRanges();s.addRange(r);}}catch(e){}}
+  try{navigator.clipboard.writeText(t).then(function(){toast("복사했어요.");},function(){sel();toast("선택됐어요. 길게 눌러 복사하세요.");});}catch(e){sel();toast("선택됐어요. 길게 눌러 복사하세요.");}}
+
+// ---------- 저장·기록 ----------
+function renderSaved(){var l=lsGet("lab_recipes",[]);$("savedSel").innerHTML='<option value="">저장된 레시피 '+l.length+'개</option>'+l.map(function(r,i){return'<option value="'+i+'">'+esc(r.name)+'</option>';}).join("");}
+function renderLogs(){var l=lsGet("lab_logs",[]);$("logList").innerHTML=l.slice().reverse().slice(0,20).map(function(x){var im=(x.photos||[]).map(function(p){return'<img class="thumb" alt="기록 사진" src="'+esc(p)+'">';}).join("");return'<div class="dict logrow">'+(im?'<div style="flex:0 0 auto;display:flex;gap:4px">'+im+'</div>':'')+'<div><b>'+esc(x.date)+' · '+esc(x.recipe)+' · '+"★".repeat(x.rate)+(x.ai?' · AI 분석':'')+'</b><p class="note" style="white-space:pre-wrap">수분율 '+x.hyd+'% · 개당 원가 '+esc(x.cost||"-")+'\n'+esc(x.note)+'</p></div></div>';}).join("")||'<p class="note">아직 기록이 없어요.</p>';}
+function saveLog(entry){var l=lsGet("lab_logs",[]);l.push(entry);try{localStorage.setItem("lab_logs",JSON.stringify(l));markDirty("lab_logs");return true;}catch(e){
+  if(entry.photos){delete entry.photos;try{localStorage.setItem("lab_logs",JSON.stringify(l));markDirty("lab_logs");toast("저장 공간이 부족해 사진 없이 기록했어요. 백업 후 오래된 기록을 정리하세요.");return true;}catch(e2){}}toast("기록을 저장하지 못했어요. 이 기기의 저장 공간을 확인하세요.");return false;}}
+function thumbOf(file){return new Promise(function(res){var u=URL.createObjectURL(file),img=new Image();img.onload=function(){var m=360,w=img.width,h=img.height,k=Math.min(1,m/Math.max(w,h)),c=document.createElement("canvas");c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);try{res(c.toDataURL("image/jpeg",.7));}catch(e){res(null);}};img.onerror=function(){URL.revokeObjectURL(u);res(null);};img.src=u;});}
+var imagesOK=false;
+function photoPrompt(){var p=P[S.type]||{},logs=lsGet("lab_logs",[]).filter(function(l){return l.recipe===S.name;}).slice(-5);
+  return "당신은 제과제빵 기능장 수준의 R&D 셰프입니다. 사진은 사용자가 방금 구운 제품(겉모습·단면)입니다. 아래 배합·공정·지난 기록과 함께 보고, 한국 제과제빵기능사 실기 기준과 프랑스·독일·일본 등 일반적인 제빵 기준에 비추어 평가하세요. 사진에서 보이는 것만 판단하고, 보이지 않는 것은 '사진으로 판단 어려움'이라고 쓰세요. 사진이 빵·과자가 아니면 그렇다고 하세요.\n\n"+context()+"\n[이 빵 종류의 앱 기준] 수분율 "+(p.h?p.h[0]+"~"+p.h[1]+"%":"해당 없음")+", 종류 "+(p.k||"-")+"\n[공정 메모] "+($("procNote").value.trim()||"없음")+(logs.length?"\n[지난 기록]\n"+logs.map(function(l){return"- "+l.date+" 평가 "+l.rate+": "+l.note;}).join("\n"):"")+
+  "\n\n오직 이 JSON 하나로만 답하세요(값은 모두 한국어, 짧게):\n{\"seen\":\"사진에 보이는 제품\",\"rating\":3,\"volume\":\"부피·모양\",\"crust\":\"껍질 색·두께\",\"crumb\":\"속결·기공\",\"good\":[\"잘된 점\"],\"problems\":[\"문제점\"],\"causes\":[\"그렇게 판단한 근거와 가능한 원인\"],\"next\":\"다음 시험에서 바꿀 한 가지와 이유\",\"changes\":[{\"n\":\"재료명\",\"pct\":64}],\"summary\":\"2~3문장 요약\",\"confidence\":\"높음|보통|낮음\"}\nchanges에는 배합에서 바꿀 재료와 새 %만 넣고, 배합 변경이 아니라 공정 변경이면 빈 배열로 두세요.";}
+function li(a){return(a||[]).map(function(x){return"- "+String(x);}).join("\n");}
+function analyzePhoto(){
+  var files=Array.prototype.slice.call($("photoIn").files||[],0,3);if(!files.length){toast("사진을 먼저 골라주세요.");return;}
+  $("photoBtn").disabled=true;$("photoOut").innerHTML='<p class="note">사진을 준비하고 있어요…</p>';$("photoFb").hidden=true;
+  Promise.all(files.map(thumbOf)).then(function(thumbs){thumbs=thumbs.filter(Boolean);
+    var base={date:$("logDate").value||new Date().toISOString().slice(0,10),recipe:S.name,hyd:r1(calc().hyd),cost:won(cost().total),photos:thumbs,items:S.items.map(function(x){return x.n+" "+r1(x.pct)+"%";}).join(", ")};
+    if(!sample||!imagesOK){base.rate=+$("logRate").value;base.note=($("procNote").value.trim()?"공정: "+$("procNote").value.trim()+"\n":"")+($("logNote").value.trim()||"사진 기록");
+      if(saveLog(base)){renderLogs();toast("사진을 기록했어요.");}
+      $("photoOut").innerHTML="";$("photoFb").hidden=false;$("photoFbText").value=photoPrompt().replace(/\n\n오직 이 JSON[\s\S]*$/,"\n\n위 기준으로 사진 속 빵을 평가하고, 잘된 점·문제점·원인·다음 시험에서 바꿀 것 한 가지를 알려줘.");$("photoBtn").disabled=false;return;}
+    $("photoOut").innerHTML='<p class="note">AI가 사진을 보고 있어요… (보통 20초~1분, 처음엔 사진 전송 허용을 물어봐요)</p>';
+    return sample.json(photoPrompt(),{images:files}).then(function(r){
+      if(!r||typeof r!=="object")throw{code:"invalid_json"};
+      var rate=Math.min(5,Math.max(1,Math.round(num(r.rating)||3)));
+      base.rate=rate;base.ai=true;
+      base.note=[r.summary||"",r.problems&&r.problems.length?"문제: "+r.problems.join(", "):"",r.next?"다음: "+r.next:"",$("procNote").value.trim()?"공정: "+$("procNote").value.trim():""].filter(Boolean).join("\n");
+      if($("logNote").value.trim())base.note+="\n메모: "+$("logNote").value.trim();
+      var saved=saveLog(base);renderLogs();
+      var ch=Array.isArray(r.changes)?r.changes.filter(function(x){return x&&x.n&&isFinite(parseFloat(x.pct));}):[];
+      var box=document.createElement("div");box.className="ana";
+      box.innerHTML='<b>'+esc(r.seen||S.name)+' · '+"★".repeat(rate)+' <span class="tip">확신도 '+esc(r.confidence||"-")+'</span></b><p style="margin:0">'+esc(r.summary||"")+'</p><dl>'+
+        '<dt>부피</dt><dd>'+esc(r.volume||"-")+'</dd><dt>껍질</dt><dd>'+esc(r.crust||"-")+'</dd><dt>속결</dt><dd>'+esc(r.crumb||"-")+'</dd>'+
+        '<dt>잘된 점</dt><dd style="white-space:pre-wrap">'+esc(li(r.good)||"-")+'</dd><dt>문제점</dt><dd style="white-space:pre-wrap">'+esc(li(r.problems)||"-")+'</dd><dt>근거·원인</dt><dd style="white-space:pre-wrap">'+esc(li(r.causes)||"-")+'</dd><dt>다음 시험</dt><dd>'+esc(r.next||"-")+'</dd></dl>'+
+        '<p class="note">'+(saved?"사진과 함께 실험 기록에 저장했어요.":"기록 저장은 실패했어요.")+' AI 판단은 사진만 보고 한 추정이라 실제로 잘라보고 맛을 확인하세요.</p>';
+      if(ch.length){var row=document.createElement("div");row.className="row";var btn=document.createElement("button");btn.className="sm";btn.textContent="제안대로 배합 바꾸기 ("+ch.map(function(x){return x.n+" "+r1(num(x.pct))+"%";}).join(", ")+")";
+        btn.onclick=function(){snap();ch.forEach(function(x){var n=String(x.n).slice(0,30),v=r1(num(x.pct));if(v<=0)S.items=S.items.filter(function(y){return y.n!==n;});else setPct(n,v);});render();diagnose();save();btn.disabled=true;btn.textContent="배합에 반영했어요 (2번 되돌리기로 취소)";};row.appendChild(btn);box.appendChild(row);}
+      $("photoOut").innerHTML="";$("photoOut").appendChild(box);$("photoIn").value="";$("photoPrev").innerHTML="";
+      if(isPC||!$("sheet").hidden){chat.push({role:"assistant",content:"사진 분석: "+(r.summary||"")+(r.next?"\n다음 시험: "+r.next:"")});saveChat();renderChat();}
+    });
+  }).catch(function(e){$("photoOut").innerHTML='<div class="msg warn">'+esc(e&&e.code==="image_rejected"?"이 사진은 쓸 수 없어요. JPG나 PNG 사진으로 다시 골라주세요.":e&&e.code==="images_unavailable"?"이 화면에서는 사진을 AI에 보낼 수 없어요.":errText(e))+'</div>';if(e&&(e.code==="not_granted"||e.code==="sampling_disabled")){sample=null;setAI(false);}})
+  .then(function(){$("photoBtn").disabled=false;});
+}
+function renderDict(){var q=$("dictQ").value.trim();$("dictList").innerHTML=Object.keys(D).filter(function(k){var f=D[k];return!q||(k+f.c+f.d).indexOf(q)>=0;}).map(function(k){var f=D[k];return'<div class="dict"><b>'+esc(k)+'</b> <span class="tip">'+esc(f.c)+' · 수분 '+Math.round(f.w*100)+'%</span><p class="note">'+esc(f.d)+'</p></div>';}).join("")||'<p class="note">찾는 재료가 없어요. 배합표에서 직접 추가할 수 있어요.</p>';}
+
+// ---------- 시작 ----------
+function init(){
+  $("preset").innerHTML=Object.keys(P).map(function(k){return"<option>"+esc(k)+"</option>";}).join("");
+  $("ingList").innerHTML=Object.keys(D).map(function(k){return'<option value="'+esc(k)+'">';}).join("");
+  $("locSel").innerHTML=Object.keys(LOC).map(function(k){return"<option>"+esc(k)+"</option>";}).join("");
+  var last=lsGet("lab_cur",null);S=(last&&last.items&&last.t&&last.price!=null)?last:newState("식빵");$("preset").value=S.type;
+  $("logDate").value=new Date().toISOString().slice(0,10);$("locPct").value=LOC[$("locSel").value].def;locNote();
+  fillInputs();render();renderSaved();renderLogs();renderDict();diagnose();
+
+  $("preset").onchange=function(){snap();$("autoMsg").hidden=true;var k=S;S=newState(this.value);S.top=k.top;S.pack=k.pack;S.t=k.t;S.e.kw=k.e.kw;S.e.kw2=k.e.kw2;S.e.eq=k.e.eq;fillInputs();render();diagnose();save();};
+  $("rname").oninput=function(){S.name=this.value;save();};
+  var tmr;function soft(){clearTimeout(tmr);tmr=setTimeout(function(){render();save();},250);}
+  ["pieces","weight","loss","bakeLoss"].forEach(function(id){$(id).oninput=function(){S[id]=num(this.value);soft();};});
+  [["tPrep","prep"],["tShape","shape"],["tBake","bake"],["tPack","pack"]].forEach(function(p){$(p[0]).oninput=function(){S.t[p[1]]=num(this.value);updateNumbers();save();};});
+  [["kw","kw"],["ovMin","ov"],["kw2","kw2"],["eqMin","eq"]].forEach(function(p){$(p[0]).oninput=function(){S.e[p[1]]=num(this.value);updateNumbers();save();};});
+  ["wage","wageExtra","kwh","fRent","fMgmt","fIns","fTele","fEquip","fEquipM","fOwner","fMonthly","waste","fee","card","target","ship","perOrder","devH","devRate","devTry","devProfit"].forEach(function(id){$(id).oninput=function(){G[id]=num(this.value);updateNumbers();save();};});
+  $("price").oninput=function(){S.price=num(this.value);updateNumbers();save();};
+  $("vatMode").onchange=function(){G.vatMode=this.value;updateNumbers();save();};
+  $("tbody").addEventListener("change",function(e){
+    var i=e.target.getAttribute("data-i"),gi=e.target.getAttribute("data-g");
+    if(i!==null){snap();var before=flourMap(),it=S.items[+i],nv=num(e.target.value),d=nv-it.pct;it.pct=nv;
+      if(S.autoFlour&&info(it.n).r==="flour"&&d){var others=S.items.filter(function(x){return x!==it&&info(x.n).r==="flour";}).sort(function(a,b){return b.pct-a.pct;});
+        others.forEach(function(o){if(!d)return;var take=d>0?Math.min(d,o.pct):d;o.pct=r1(o.pct-take);d=r1(d-take);});
+        S.items=S.items.filter(function(x){return!(x!==it&&info(x.n).r==="flour"&&x.pct<=0);});
+        autoAdjust(before);}
+      render();save();}
+    else if(gi!==null){var it2=S.items[+gi],gv=num(e.target.value);if(!(it2.pct>0)||!(gv>0)){render();return;}snap();
+      var c=calc(),base=gv*100/it2.pct;S.mode="flour";S.flourG=r1(base*c.fp/100);fillInputs();render();save();
+      toast(it2.n+" "+gv+"g에 맞춰 모든 재료를 바꿨어요.");}
+  });
+  $("mode").onchange=function(){S.mode=this.value;fillInputs();render();save();};
+  $("flourG").oninput=function(){S.flourG=num(this.value);soft();};
+  $("autoFlour").onchange=function(){S.autoFlour=this.checked;save();};
+  function scaleBy(m){snap();if(S.mode==="flour")S.flourG=r1(num(S.flourG)*m);else S.pieces=Math.max(1,Math.round(num(S.pieces)*m));fillInputs();render();save();toast(m>1?"두 배로 늘렸어요.":"반으로 줄였어요.");}
+  $("x05").onclick=function(){scaleBy(.5);};$("x2").onclick=function(){scaleBy(2);};
+  $("tbody").addEventListener("click",function(e){var d=e.target.getAttribute("data-del");if(d!==null){snap();S.items.splice(+d,1);render();save();}});
+  $("addBtn").onclick=function(){var n=$("newIng").value.trim(),v=num($("newPct").value);if(!n){toast("재료 이름을 넣어주세요.");return;}snap();var before=flourMap(),e=find(n);if(e)e.pct=r1(e.pct+v);else S.items.push({n:n,pct:v,base:v});
+    if(S.autoFlour&&info(n).r==="flour"&&v>0){var d=v,me=find(n);S.items.filter(function(x){return x!==me&&info(x.n).r==="flour";}).sort(function(a,b){return b.pct-a.pct;}).forEach(function(o){if(d<=0)return;var t=Math.min(d,o.pct);o.pct=r1(o.pct-t);d=r1(d-t);});S.items=S.items.filter(function(x){return!(x!==me&&info(x.n).r==="flour"&&x.pct<=0);});autoAdjust(before);}$("newIng").value="";$("newPct").value="";render();save();toast(n+": "+info(n).d);};
+  $("undoBtn").onclick=function(){if(!hist.length){toast("되돌릴 내용이 없어요.");return;}S=JSON.parse(hist.pop());$("preset").value=S.type;fillInputs();render();diagnose();save();toast("되돌렸어요.");};
+  $("ingCostBody").addEventListener("change",function(e){var n=e.target.getAttribute("data-cp"),f=e.target.getAttribute("data-f");if(!n)return;prices[n]=Object.assign({},priceOf(n),prices[n]||{});prices[n][f]=f==="u"?e.target.value:num(e.target.value);save();renderCost();});
+  $("topBody").addEventListener("change",function(e){var i=e.target.getAttribute("data-tp"),f=e.target.getAttribute("data-f");if(i===null)return;S.top[+i][f]=(f==="n"||f==="u")?e.target.value:num(e.target.value);save();renderCost();});
+  $("topBody").addEventListener("click",function(e){var d=e.target.getAttribute("data-tpdel");if(d!==null){S.top.splice(+d,1);save();renderCost();}});
+  $("packBody").addEventListener("change",function(e){var i=e.target.getAttribute("data-pk"),f=e.target.getAttribute("data-f");if(i===null)return;S.pack[+i][f]=f==="n"?e.target.value:num(e.target.value);save();renderCost();});
+  $("packBody").addEventListener("click",function(e){var d=e.target.getAttribute("data-pkdel");if(d!==null){S.pack.splice(+d,1);save();renderCost();}});
+  $("addTop").onclick=function(){S.top.push({n:"크림치즈 충전",g:20,p:16000,a:1,u:"kg"});save();renderCost();};
+  $("addPack").onclick=function(){S.pack.push({n:"상자",p:30000,q:100});save();renderCost();};
+  $("whatIf").oninput=whatIf;
+  $("diagBtn").onclick=diagnose;
+  $("fixBtn").onclick=function(){var f=diagnose();if(!f.length){toast("고칠 점이 없어요.");return;}snap();f.forEach(function(x){x[1]();});render();diagnose();save();toast(f.length+"가지를 보정했어요.");};
+  $("subFrom").onchange=updTo;$("subTo").onchange=updSubNote;$("subBtn").onclick=doSub;
+  $("locSel").onchange=function(){$("locPct").value=LOC[this.value].def;locNote();};$("locBtn").onclick=doLoc;
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"),function(b){if(!b.getAttribute("data-q"))return;b.onclick=function(){sendMsg(b.getAttribute("data-q"));};});
+  $("send").onclick=function(){sendMsg($("msg").value);};
+  $("chipPhoto").onclick=function(e){e.stopPropagation();if(!isPC)closeBot();goTo("photo");};
+  $("msg").addEventListener("keydown",function(e){if(e.isComposing||e.keyCode===229)return;if(e.key==="Enter"&&(e.metaKey||e.ctrlKey||(isPC&&!e.shiftKey))){e.preventDefault();sendMsg($("msg").value);}});
+  $("stop").onclick=function(){if(ctl)ctl.abort();};
+  $("fab").onclick=openBot;$("sheetClose").onclick=closeBot;
+  $("chatClear").onclick=function(){if(busy)return;chat=[];saveChat();renderChat();$("fbText").value="";};
+  $("fbCopy").onclick=function(){if(!$("fbText").value)fbBuild($("msg").value||"지금 배합을 점검하고 개선해줘.");copyFrom($("fbText"));};
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("sheet").hidden)closeBot();});
+  $("saveBtn").onclick=function(){var l=lsGet("lab_recipes",[]),i=-1;l.forEach(function(r,j){if(r.name===S.name)i=j;});var cp=JSON.parse(JSON.stringify(S));if(i>=0)l[i]=cp;else l.push(cp);lsSet("lab_recipes",l);renderSaved();renderMenu();toast("'"+S.name+"' 저장했어요.");};
+  $("loadBtn").onclick=function(){var v=$("savedSel").value;if(v==="")return;snap();S=JSON.parse(JSON.stringify(lsGet("lab_recipes",[])[+v]));$("preset").value=S.type;fillInputs();render();diagnose();save();toast("불러왔어요.");};
+  var delArm=null;
+  $("delBtn").onclick=function(){var v=$("savedSel").value;if(v==="")return;var l=lsGet("lab_recipes",[]);
+    if(delArm!==v){delArm=v;$("delAsk").hidden=false;$("delAsk").textContent="'"+l[+v].name+"'을(를) 지우려면 삭제를 한 번 더 누르세요.";return;}
+    l.splice(+v,1);lsSet("lab_recipes",l);delArm=null;$("delAsk").hidden=true;renderSaved();renderMenu();toast("삭제했어요.");};
+  $("savedSel").onchange=function(){delArm=null;$("delAsk").hidden=true;};
+  $("logBtn").onclick=function(){if(saveLog({date:$("logDate").value,recipe:S.name,rate:+$("logRate").value,hyd:r1(calc().hyd),cost:won(cost().total),note:$("logNote").value.trim(),items:S.items.map(function(x){return x.n+" "+r1(x.pct)+"%";}).join(", ")})){$("logNote").value="";renderLogs();toast("기록했어요.");}};
+  $("photoIn").onchange=function(){var fs=Array.prototype.slice.call(this.files||[],0,3);$("photoPrev").innerHTML="";fs.forEach(function(f){thumbOf(f).then(function(t){if(t){var i=document.createElement("img");i.className="thumb";i.alt="고른 사진";i.src=t;$("photoPrev").appendChild(i);}});});if((this.files||[]).length>3)toast("사진은 3장까지만 써요.");};
+  $("photoBtn").onclick=analyzePhoto;
+  $("photoFbCopy").onclick=function(){copyFrom($("photoFbText"));};
+  function backupJSON(){return JSON.stringify({v:3,recipes:lsGet("lab_recipes",[]),logs:lsGet("lab_logs",[]),refs:lsGet("lab_refs",[]),sales:lsGet("lab_sales",[]),prices:prices,g:G,cur:S});}
+  $("expBtn").onclick=function(){$("backupBox").value=backupJSON();copyFrom($("backupBox"));};
+  if(window.claude&&typeof window.claude.use==="function")window.claude.use("downloads").then(function(dl){if(!dl)return;$("fileBtn").hidden=false;
+    $("fileBtn").onclick=function(){dl.save({filename:"베이커랩노트-백업-"+today()+".json",data:backupJSON()}).then(function(r){if(r&&r.status==="saved")toast("백업 파일을 저장했어요.");}).catch(function(e){if(e&&e.code==="cancelled")return;toast("파일 저장이 안 됐어요. '전체 백업 만들기'로 복사해 보관하세요.");});};}).catch(function(){});
+  $("csvBtn").onclick=function(){var rows=["날짜,레시피,평가,수분율,개당원가,배합,메모"];lsGet("lab_logs",[]).forEach(function(l){rows.push([l.date,l.recipe,l.rate,l.hyd,l.cost,l.items,l.note].map(function(v){return'"'+String(v==null?"":v).replace(/"/g,'""')+'"';}).join(","));});$("backupBox").value=rows.join("\n");copyFrom($("backupBox"));};
+  $("impBtn").onclick=function(){try{var o=JSON.parse($("backupBox").value);if(o.recipes)lsSet("lab_recipes",o.recipes);if(o.logs)lsSet("lab_logs",o.logs);if(o.prices)prices=o.prices;if(o.g)G=Object.assign(G,o.g);if(o.refs)lsSet("lab_refs",o.refs);if(o.sales)lsSet("lab_sales",o.sales);if(o.cur&&o.cur.items&&o.cur.t){S=o.cur;$("preset").value=S.type;}save();renderRefs();renderSales();fillInputs();render();renderSaved();renderLogs();toast("복원했어요.");}catch(e){toast("백업 내용이 올바르지 않아요.");}};
+  $("dictQ").oninput=renderDict;
+  renderRef();$("qApply").onclick=quickApply;
+  $("tabs").innerHTML=TABS.map(function(T){return'<button type="button" data-tab="'+T[0]+'" role="tab">'+T[1]+'</button>';}).join("")+'<span class="mini" id="miniKpi"></span>';
+  Array.prototype.forEach.call($("tabs").querySelectorAll("button"),function(b){b.onclick=function(){showTab(b.dataset.tab);window.scrollTo({top:$("tabs").offsetTop-4});};});
+  $("expert").onchange=function(){setExpert(this.checked);save();toast(this.checked?"전문가 모드: 모든 항목이 보여요.":"간단 모드: 꼭 필요한 항목만 보여요.");};
+  $("onbPreset").innerHTML=Object.keys(P).map(function(k){return"<option>"+esc(k)+"</option>";}).join("");$("onbPreset").value=S.type;$("onbPrice").value=S.price;
+  $("onbPreset").onchange=function(){$("onbPrice").value=P[this.value].pr;};
+  $("onbGo").onclick=onbGo;$("onbSkip").onclick=function(){G.onb=true;save();onbShow();};
+  $("sAdd").onclick=addSale;$("sMenu").onchange=function(){};
+  $("sBody").addEventListener("click",function(e){var k=e.target.getAttribute("data-sdel");if(!k)return;var p=k.split("|");lsSet("lab_sales",salesAll().filter(function(x){return!(x.d===p[0]&&x.m===p[1]);}));renderSales();toast("기록을 지웠어요.");});
+  [["tTarget"],["tRoom"],["tFlour"],["tFric"],["tTap"],["lbDays"]].forEach(function(p){var id=p[0];$(id).value=G[id];$(id).oninput=function(){G[id]=num(this.value);tempCalc();renderLabel();save();};});
+  ["lbName","lbShop","lbAddr","lbKeep","lbDate"].forEach(function(id){$(id).value=G[id]||"";$(id)[id==="lbKeep"?"onchange":"oninput"]=function(){G[id]=this.value;renderLabel();save();};});
+  if(!G.lbDate)$("lbDate").value=new Date().toISOString().slice(0,10);
+  $("lbCopy").onclick=function(){var ta=document.createElement("textarea");ta.value=labelText(labelData());ta.style.cssText="position:fixed;left:-999px";document.body.appendChild(ta);copyFrom(ta);setTimeout(function(){ta.remove();},500);};
+  var types=Object.keys(P);$("refFilter").innerHTML='<option value="">전체</option>'+types.map(function(t){return"<option>"+esc(t)+"</option>";}).join("");$("urType").innerHTML=types.map(function(t){return"<option>"+esc(t)+"</option>";}).join("");
+  $("avgCat").innerHTML='<option value="">전체</option>'+AVG_CATS.map(function(c){return"<option>"+esc(c)+"</option>";}).join("");
+  $("avgCat").onchange=renderAvg;$("avgQ").oninput=renderAvg;
+  $("avgSrc").innerHTML=AVG_SRC.map(function(x){return'<li><a href="'+esc(x[1])+'" target="_blank" rel="noopener">'+esc(x[0])+'</a></li>';}).join("");
+  $("d12").addEventListener("click",function(e){var t=e.target,i;
+    if((i=t.getAttribute("data-amode"))!==null){G.avgMode=i;save();renderAvg();}
+    else if((i=t.getAttribute("data-acmp"))!==null){var box=$("ac"+i);box.hidden=!box.hidden;box.textContent=avgCompare(AVG[+i]);}
+    else if((i=t.getAttribute("data-aload"))!==null){var r=AVG[+i];snap();var keep=S;S=newState(P[r.t]?r.t:keep.type);S.top=keep.top;S.pack=keep.pack;S.t=keep.t;S.autoFlour=keep.autoFlour;S.name=r.n+" (평균)";S.items=avgParse(r.it).map(function(x){return{n:x.n,pct:x.pct,base:x.pct};});$("preset").value=S.type;fillInputs();render();diagnose();save();toast("'"+r.n+"' 평균 배합을 불러왔어요. 되돌리기로 취소할 수 있어요.");}
+    else if((i=t.getAttribute("data-aask"))!==null){var r2=(i[0]==="b"?AVG:FILL)[+i.slice(1)];sendMsg(r2.n+" 평균 배합을 설명해줘. 재료 비율 이유와 실패 원인도 알려줘.");}});
+  renderAvg();renderGrants();
+  $("fcCity").innerHTML=Object.keys(CITY).map(function(c){return"<option>"+c+"</option>";}).join("");$("fcCity").value=G.city||"서울";
+  $("fcWx").value=G.fcWx||"";$("fcEv").checked=!!(G.fcEv||HOLI[addDays(today(),1)]);
+  $("fcCity").onchange=function(){G.city=this.value;G.fcWxManual=false;save();autoWx(function(ok){wxDone(ok);});};
+  $("fcWx").onchange=function(){G.fcWx=this.value;G.fcWxManual=true;save();renderSales();renderBrief();};
+  $("fcEv").onchange=function(){G.fcEv=this.checked;save();renderSales();renderBrief();};
+  function wxDone(ok){$("fcWx").value=G.fcWx||"";var ln=wxLine(addDays(today(),1));$("fcWxInfo").textContent=ok&&ln?"내일 "+ln:"날씨를 불러오지 못했어요. 직접 골라주세요.";renderSales();renderBrief();}
+  $("fcAuto").onclick=function(){G.fcWxManual=false;BR.wxCache=null;$("fcWxInfo").textContent="불러오는 중…";autoWx(wxDone);};
+  $("sDate").onchange=function(){$("sEv").checked=!!HOLI[this.value];};
+  $("mic").onclick=listen;if(!speechOK())$("mic").title="키보드의 마이크로 말해도 돼요";
+  function ttsLabel(){$("ttsBtn").textContent=G.tts?"읽어주기 켜짐":"읽어주기 꺼짐";}ttsLabel();$("ttsBtn").onclick=function(){G.tts=!G.tts;save();ttsLabel();if(!G.tts&&window.speechSynthesis)speechSynthesis.cancel();};
+  setTimeout(function(){autoWx(function(ok){if(ok)wxDone(true);});},800);
+  $("refFilter").onchange=renderRefs;$("refQ").oninput=renderRefs;renderRefs();
+  $("refLib").addEventListener("click",function(e){var t=e.target,refs=allRefs(),i;
+    if((i=t.getAttribute("data-rcmp"))!==null){var box=$("rc"+i);box.hidden=!box.hidden;box.textContent=compareText(refs[+i]);}
+    else if((i=t.getAttribute("data-rload"))!==null){var r=refs[+i];snap();var keep=S;S=newState(P[r.t]?r.t:keep.type);S.top=keep.top;S.pack=keep.pack;S.t=keep.t;S.autoFlour=keep.autoFlour;S.name=r.n;S.items=r.items.map(function(x){return{n:x.n,pct:x.pct,base:x.pct};});$("preset").value=S.type;fillInputs();render();diagnose();save();toast("'"+r.n+"'을 배합표에 불러왔어요. 되돌리기로 취소할 수 있어요.");}
+    else if((i=t.getAttribute("data-rdel"))!==null){var u=lsGet("lab_refs",[]),idx=+i-STD.length;if(t.dataset.arm!=="1"){t.dataset.arm="1";t.textContent="한 번 더 누르면 삭제";return;}u.splice(idx,1);lsSet("lab_refs",u);renderRefs();toast("삭제했어요.");}});
+  $("urAdd").onclick=function(){var items=parseItems($("urItems").value);if(!$("urName").value.trim()||!items.length){toast("이름과 재료를 적어주세요.");return;}
+    var u=lsGet("lab_refs",[]);u.push({n:$("urName").value.trim(),t:$("urType").value,o:$("urOrigin").value.trim(),src:$("urSrc").value.trim(),items:items,d:""});lsSet("lab_refs",u);["urName","urOrigin","urSrc","urItems"].forEach(function(id){$(id).value="";});renderRefs();toast("참고 레시피에 추가했어요.");};
+  $("urCur").onclick=function(){var u=lsGet("lab_refs",[]);u.push({n:S.name+" (내 배합 "+new Date().toISOString().slice(0,10)+")",t:S.type,o:"내 배합",src:"직접 개발",items:S.items.map(function(x){return{n:x.n,pct:r1(x.pct)};}),d:"수분율 "+r1(calc().hyd)+"%"});lsSet("lab_refs",u);renderRefs();toast("지금 배합을 참고 레시피로 저장했어요.");};
+  renderMenu();$("d6").addEventListener("toggle",function(){if($("d6").open)renderMenu();});
+  layoutMode();if(pcMQ){if(pcMQ.addEventListener)pcMQ.addEventListener("change",layoutMode);else if(pcMQ.addListener)pcMQ.addListener(layoutMode);}
+  function qVis(){$("qAppWrap").hidden=$("qChannel").value!=="app";}$("qChannel").onchange=qVis;qVis();
+  bindGo(document);setExpert(G.expert);onbShow();renderSales();showTab(G.tab||"home");SY.initDone=true;syncStart();window.__lab={recommend:recommend,brief:dayBrief,brainLocal:brainLocal,searchAll:searchAll,G:function(){return G;},AVG:AVG,FILL:FILL,avgParse:avgParse,avgHasFlour:avgHasFlour,D:D,info:info,S:function(){return S;},chat:function(){return chat;},sendMsg:sendMsg,TOOLS:TOOLS,rules:rules};
+
+  // AI 연결: Claude 화면이 아니면 바로 대체 화면
+  setAI(false);$("aiStatus").textContent="연결 확인 중";
+  if(window.claude&&typeof window.claude.use==="function"){
+    window.claude.use("sample").then(function(sm){sample=sm||null;setAI(!!sample);
+      if(sample&&sample.limits)return sample.limits().then(function(l){toolsOK=!!(l&&l.tools);imagesOK=!!(l&&l.images);}).catch(function(){toolsOK=false;});}).catch(function(){setAI(false);});
+  }else setAI(false);
+}
+init();
+})();
+</script>
+<script>if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script></body></html>

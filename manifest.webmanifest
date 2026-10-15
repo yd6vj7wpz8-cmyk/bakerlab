@@ -1,0 +1,16 @@
+{
+  "name": "베이커 랩 노트",
+  "short_name": "베이커랩",
+  "description": "작은 빵집을 위한 레시피·원가·판매 AI 도우미",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f4ef",
+  "theme_color": "#3d5a3a",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
